@@ -6,7 +6,7 @@ echo "Removing previously extracted activations ..."
 rm -rf activations/lmdb/*
 rm -rf activations/numpy/*
 
-layers=("conv1" "conv2" "conv3" "conv4" "conv5" "fc6" "fc7")
+layers=("conv1" "conv2" "conv3" "conv4" "conv5" "fc6" "fc7", "fc8")
 
 for layer in ${layers[@]}
 do
