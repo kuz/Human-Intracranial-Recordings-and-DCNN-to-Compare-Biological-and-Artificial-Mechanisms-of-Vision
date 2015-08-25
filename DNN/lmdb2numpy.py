@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 if len(sys.argv) != 2:
   print 'Usage:', sys.argv[0], '<lmdb_path>'
-  print 'Usage example: python lmdb2numpy.py actications/lmdb/fc7'
+  print 'Usage example: python lmdb2numpy.py activations/lmdb/fc7'
   sys.exit(2)
 
 lmdb_path = sys.argv[1]
@@ -40,7 +40,7 @@ with env.begin() as txn:
                 data = np.empty((num_images, num_features))
 
             # copy data to matrix
-            data[int(key), ] = arr[0, 1, 0]
+            data[int(key), ] = arr[0, :, 0]
 
             # display progress
             sys.stdout.write('{0}/{1}\r'.format(counter, num_images))
