@@ -136,9 +136,9 @@ for subject = subjects
     
     % stimulus is shown for 200ms, extract the corresponding 1000ms of
     % the signal after the stimulus onset
-    s.data = zeros(length(stimseq), length(active_coords.probe_ids), 1000);
+    s.data = zeros(length(stimseq), length(active_coords.probe_ids), 1300);
     for sid = 1:length(stimseq)
-        s.data(sid, :, :) = m_data(:, pictimes(sid):pictimes(sid) + 999);
+        s.data(sid, :, :) = m_data(:, pictimes(sid) - 500:pictimes(sid) + 799);
     end
     
     % add some metadata
