@@ -20,8 +20,8 @@ for s = 1:length(subjects)
     disp(['Processing ' num2str(s) '/' num2str(length(subjects)) ': ' subject '...'])
     
     % load probe coordinates
-    mni_pts = ['../../../Data/Raw_data/' subject '_MNI.PTS'];
-    coords_mat = ['../../../Data/Raw_data/' subject '_COORDS.MAT'];
+    mni_pts = ['../../../Data/Intracranial/Restructured/' subject '_MNI.PTS'];
+    coords_mat = ['../../../Data/Intracranial/Restructured/' subject '_COORDS.MAT'];
     if exist(mni_pts, 'file') == 2
         coords = load_mni_pts(mni_pts);
     elseif exist(coords_mat, 'file') == 2

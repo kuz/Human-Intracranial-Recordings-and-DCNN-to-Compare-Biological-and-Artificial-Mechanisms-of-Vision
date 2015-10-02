@@ -1,13 +1,18 @@
+# -*- coding: utf-8 -*-
+
 """
 
 Compose the list of unique subjects and the file type we have for each of them
+
+NB: Remember to make all file names uppercase before running the script.
+for f in * ; do mv -- "$f" "$(tr [:lower:] [:upper:] <<< "$f")" ; done
 
 """
 
 import os
 
 # read the list of all data files
-filelist = [x.upper() for x in os.listdir('../../Data/Raw_data')]
+filelist = [x.upper() for x in os.listdir('../../Data/Intracranial/Restructured')]
 
 # extract subjects and possible types of files
 subjects = []
@@ -25,7 +30,7 @@ for filename in filelist:
 
 # extract unique instances
 subjects = list(set(subjects))
-filetypes = list(set(filetypes))
+filetypes = sorted(list(set(filetypes)))
 
 # show in a tabular form which subject has which files
 for subject in subjects:
