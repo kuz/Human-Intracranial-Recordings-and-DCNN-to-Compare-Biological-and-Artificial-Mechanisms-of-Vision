@@ -2,7 +2,7 @@ Extract Brain Activations
 =========================
 
 ### Files
-
+Listed in the order of running.  
 `subject_files_we_posses.py` creates the `subjects.txt` list  
 `apply_eeg2mat.m` transforms .eeg files into .mat files  
 `assemble.m` forms standartized tensors from all the data  
@@ -11,4 +11,3 @@ Extract Brain Activations
 
 
 ### Pipeline
-
