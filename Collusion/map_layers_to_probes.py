@@ -6,6 +6,7 @@ For each probe we find the layer which is the best at precting the probe's activ
 """
 
 import os
+import time
 import numpy as np
 import scipy.io as sio
 from sklearn import linear_model
@@ -17,32 +18,18 @@ from joblib import Parallel, delayed
 # parameters
 ncores = multiprocessing.cpu_count()
 
-# prepare lists of probe coordinates for each layer
-print 'Loading list of layers...'
-layers = os.listdir('../../Data/DNN/Activations/numpy')
-assignments = {}
-for layer in layers:
-    assignments[layer] = []
-
-# load DNN activations
-print 'Loading DNN activations...'
-activations = {}
-for layer in layers:
-    activations[layer] = np.load('../../Data/DNN/Activations/numpy/%s/activations.npy' % layer)
-
-# load list of stimuli in the order they were presented to DNN
-print 'Loading DNN stimuli...'
-dnn_stimuli = np.loadtxt('../../Data/DNN/imagesdone.txt', dtype={'names': ('stimulus', 'class'), 'formats': ('S10', 'i1')})
-dnn_stimuli = [x[0].split('.')[0] for x in dnn_stimuli]
-
-# load list of subjects
-listing = os.listdir('../../Data/Intracranial/Processed/maxamp/')
-
-def predict_from_layer(activations, layer, nstims, nprobes, subject):
+def predict_from_layer(activations, layer, subjects, subject_id):
     """
     Takes one layer and predicts all probe activations from that layer
     """
-    
+
+    subject = subjects[subject_id]
+    nstims = subject['data'].shape[0]
+    nprobes = subject['data'].shape[1]
+
+    # display progress
+    print 'Training models for subject %s (%d/%d), layer %s' % (subject['name'], subject_id, len(subjects), layer)
+
     # place to store coefficients
     r_coefs = np.zeros(nprobes)
 
@@ -84,15 +71,40 @@ def predict_from_layer(activations, layer, nstims, nprobes, subject):
         else:
             r_coefs[pid] = 0.0
 
-    return r_coefs
+    return (subject['name'], layer, r_coefs)
 
-# for each subject
-for sfile in listing:
+# prepare lists of probe coordinates for each layer
+print 'Loading list of layers...'
+layers = os.listdir('../../Data/DNN/Activations/numpy')
+assignments = {}
+for layer in layers:
+    assignments[layer] = []
 
-    print 'Processing %s...' % sfile
+# load DNN activations
+print 'Loading DNN activations...'
+activations = {}
+for layer in layers:
+    activations[layer] = np.load('../../Data/DNN/Activations/numpy/%s/activations.npy' % layer)
 
-    # load the subject file and parse Matlab data structure into a python dict
-    print '  Loading matlab structure...'
+# load list of stimuli in the order they were presented to DNN
+print 'Loading DNN stimuli...'
+dnn_stimuli = np.loadtxt('../../Data/DNN/imagesdone.txt', dtype={'names': ('stimulus', 'class'), 'formats': ('S10', 'i1')})
+dnn_stimuli = [x[0].split('.')[0] for x in dnn_stimuli]
+
+# read list of subjects
+listing = os.listdir('../../Data/Intracranial/Processed/maxamp/')
+
+# grid of (subject, layer) pairs to compute
+subject_layer_grid = []
+
+# load brain data
+print 'Loading brain data...'
+subjects = [None] * len(listing)
+for i, sfile in enumerate(listing):
+
+    print '  Loading %s...' % sfile
+
+    # load the matlab structure 
     s = sio.loadmat('../../Data/Intracranial/Processed/maxamp/%s' % sfile)
     subject = {}
     subject['stimseq'] = [x[0][0] for x in s['s']['stimseq'][0][0]]
@@ -104,23 +116,42 @@ for sfile in listing:
     subject['data'] = s['s']['data'][0][0]
     subject['name'] = s['s']['name'][0][0][0]
 
-    nstims = subject['data'].shape[0]
-    nprobes = subject['data'].shape[1]
+    subjects[i] = subject
 
-    # storage for the prediction results
-    r_coefs = np.zeros((nprobes, len(layers)))
+    for layer in layers:
+        subject_layer_grid.append((i, layer))
 
-    # for each probe, layer combination train a linear model to predict the probe response from the layer activations
-    print '  Training linear models...'
-    results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)(activations, layer, nstims, nprobes, subject) for layer in layers)
-    results = np.vstack(results)
-    results = np.nan_to_num(results)
+# for each probe, layer combination train a linear model to predict the probe response from the layer activations
+print '  Training linear models...'
+start = time.time()
+results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)(activations, layer, subjects, subject_id) for (subject_id, layer) in subject_layer_grid)
+print 'Training the models took', time.time() - start
+
+# aggregate results and store to files
+print 'Aggregating results...'
+coefficients = {}
+# prepare the structure
+for sname in [s['name'] for s in subjects]:
+    coefficients[sname] = [None] * 8
+
+# put every result to a corresponding cell
+for record in results:
+    sname, layer, r_coefs = record
+    coefficients[sname][layers.index(layer)] = r_coefs
+
+# build the mapping and store the result
+for sname in [s['name'] for s in subjects]:
+
+    print 'Storing mapping for %s...' % subject['name']
+
+    r_coefs = np.vstack(coefficients[sname])
+    r_coefs = np.nan_to_num(r_coefs)
 
     # for each probe find the layer it is most correlated with
-    probe_to_layer_map = np.array(np.argmax(results, axis=0) + 1, dtype=np.int8)
+    probe_to_layer_map = np.argmax(r_coefs, axis=0) + 1
 
     # store probe to layer mapping for the subject
-    np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s.txt' % subject['name'], probe_to_layer_map)
+    np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s.txt' % subject['name'], probe_to_layer_map, fmt='%i')
 
     
 

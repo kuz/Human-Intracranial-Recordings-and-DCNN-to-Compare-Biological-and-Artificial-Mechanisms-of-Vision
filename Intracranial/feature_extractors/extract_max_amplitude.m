@@ -24,8 +24,11 @@ for sfile = listing
         for probe = 1:length(s.probes.probe_ids)
     
             % compute maximum LFP across the whole signal 
-            signal = squeeze(s.data(stimulus, probe, 500:1100));
-            maxamp(stimulus, probe) = max(abs(signal));
+            signal = detrend(squeeze(s.data(stimulus, probe, :)));
+            baseline = signal(1:400);
+            poststim = signal(500:1100);
+            baseline_normalized = poststim / std(baseline);
+            maxamp(stimulus, probe) = max(abs(baseline_normalized));
             
         end
     end
