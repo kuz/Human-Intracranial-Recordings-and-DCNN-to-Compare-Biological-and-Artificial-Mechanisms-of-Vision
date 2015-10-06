@@ -7,9 +7,10 @@ addpath('./mniplots')
 
 % load the list of subjects
 subjects = textread('subjects.txt', '%s', 'delimiter', '\n');
+
 % normally loaded form subjects.txt
 % for testing purposes given manually here as
-subjects = {'AB_12JAN10G', 'AL_25FEV13N', 'AM_10JAN12G'};
+%subjects = {'AB_12JAN10G', 'AL_25FEV13N', 'AM_10JAN12G'};
 
 % load the sequence of stimuli
 stimseq = textread('stimsequence.txt', '%s', 'delimiter', '\n');
