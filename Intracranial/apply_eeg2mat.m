@@ -5,13 +5,13 @@
 %
 
 % add elan scipts to the path
-addpath('/home/parallels/Software/Elan/misc/matlab')
+addpath('/gpfs/hpchome/a72073/Software/Elan/misc/matlab')
 
 % compose a list of .eeg file
 eegfiles = dir('../../Data/Intracranial/Restructured/*.EEG');
 
 % process .eeg files one by one
-for i = 51:length(eegfiles)
+for i = 77:length(eegfiles)
 
     % display progress
     disp(['Processing ' eegfiles(i).name ' ' num2str(i) '/' num2str(length(eegfiles))])
