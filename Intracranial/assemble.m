@@ -16,7 +16,7 @@ subjects = textread('subjects.txt', '%s', 'delimiter', '\n');
 stimseq = textread('stimsequence.txt', '%s', 'delimiter', '\n');
 stimgroups = textread('stimgroups.txt', '%d', 'delimiter', '\n');
 
-for subject = subjects
+for subject = subjects'
     
     % set the break flag used in the inner loops
     break_flag = false;
@@ -25,7 +25,13 @@ for subject = subjects
     disp(['Processing ' subject '...'])
     
     % load subject data
-    load(['../../Data/Intracranial/Restructured/' subject '_VISU.EEG.MAT'])
+    filename = ['../../Data/Intracranial/Restructured/' subject '_VISU.EEG.MAT'];
+    if exist(filename, 'file') == 2
+        load(['../../Data/Intracranial/Restructured/' subject '_VISU.EEG.MAT'])
+    else
+        disp(['  ERROR: ' filename ' does not exist! Moving on.'])
+        continue
+    end
     
     % pick the timestamps corrsponding to the moments when images from the
     % stimulus sequence were shown
@@ -130,7 +136,7 @@ for subject = subjects
     
     if break_flag
         clearvars -except subjects stimseq stimgroups
-        break
+        continue
     end
     
     s.probes = active_coords;
