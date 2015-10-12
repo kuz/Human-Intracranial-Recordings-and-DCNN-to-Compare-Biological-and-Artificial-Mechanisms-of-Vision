@@ -10,7 +10,7 @@ subjects = textread('subjects.txt', '%s', 'delimiter', '\n');
 
 % normally loaded form subjects.txt
 % for testing purposes given manually here as
-%subjects = {'AB_12JAN10G', 'AL_25FEV13N', 'AM_10JAN12G'};
+%subjects = {'LYONNEURO_2013_ROTP'};
 
 % load the sequence of stimuli
 stimseq = textread('stimsequence.txt', '%s', 'delimiter', '\n');
@@ -75,9 +75,18 @@ for subject = subjects'
     all_rod_names = [rod_names{:}];
     
     % drop labels and data for the electrodes we are not interested in
-    to_exclude = {'MKR', 'fz', 'cz', 'pz', 'ecg', 'thor', 'abdo', 'xyz'};
-    for excluded_name = to_exclude
+    to_exclude_exact = {'MKR', 'fz', 'cz', 'pz', 'ecg', 'thor', 'abdo', ...
+                        'xyz', 'PULS', 'SpO', 'BEAT'};
+    for excluded_name = to_exclude_exact
         drop_ids = strmatch(excluded_name, char(all_rod_names), 'exact');
+        m_data(drop_ids, :) = [];
+        v_label_selected(drop_ids) = [];
+        all_rod_names(drop_ids) = [];
+    end
+    
+    to_exclude_fuzzy = {'FORGET'};
+    for excluded_name = to_exclude_fuzzy
+        drop_ids = strmatch(excluded_name, char(all_rod_names));
         m_data(drop_ids, :) = [];
         v_label_selected(drop_ids) = [];
         all_rod_names(drop_ids) = [];
@@ -85,6 +94,10 @@ for subject = subjects'
     
     % take list of possible rod names
     rod_names = unique(all_rod_names, 'stable');
+    disp(rod_names)
+    clearvars -except subjects stimseq stimgroups
+    continue
+    
     
     % clazily ugly code to extract probe indices for each rod and MNI
     % coordinates
