@@ -68,6 +68,7 @@ for subject = subjects'
     
     % keep only the data about the channels we are interested in (rods)
     coord_rod_names = upper(coord_rod_names);
+    coord_rod_names = strrep(coord_rod_names, char(39), 'P');
     v_label_selected = upper(v_label_selected);
     v_label_selected = strrep(v_label_selected, char(39), 'P');
     
@@ -85,15 +86,6 @@ for subject = subjects'
        keep_ids = [keep_ids; strmatch(rn, selected_rod_names, 'exact')];
     end
     
-    % check that number of IDs to keep is equal to the number of probe
-    % locations in the coords matrix
-    if (length(keep_ids) ~= sum(cellfun(@length, coords)))
-        disp(['  ERROR: Matched ' num2str(length(keep_ids)) ' while only ' ...
-               num2str(sum(cellfun(@length, coords))) ' probe locations in ' ...
-               'the list of MNI coordinates.'])
-        continue
-    end
-    
     % drop labels and data for the electrodes we are not interested in
     m_data = m_data(keep_ids, :);
     v_label_selected = v_label_selected(keep_ids);
@@ -101,16 +93,15 @@ for subject = subjects'
     
     % take list of possible rod names
     rod_names = unique(selected_rod_names, 'stable');
-    disp([num2str(length(rod_names)) ' ?= ' num2str(length(coords))])
-    disp(rod_names)
-    clearvars -except subjects stimseq stimgroups
-    continue
-    
+    %disp([num2str(length(rod_names)) ' ?= ' num2str(length(coords))])
+    %disp(rod_names)
+    %clearvars -except subjects stimseq stimgroups
+    %continue
     
     % clazily ugly code to extract probe indices for each rod and MNI
     % coordinates
     active_coords = struct();
-    active_coords.rod_names = [];
+    active_coords.rod_names = {};
     active_coords.probe_ids = [];
     active_coords.mni = [];
     for rod_id = 1:length(rod_names)
@@ -119,7 +110,7 @@ for subject = subjects'
         rod_name = rod_names{rod_id};
         
         % find all probes which belong to that rod
-        probes = strmatch(rod_name, char(all_rod_names), 'exact');
+        probes = strmatch(rod_name, char(selected_rod_names), 'exact');
         last_num = 0;
         for probe_id = probes'
             
@@ -135,7 +126,7 @@ for subject = subjects'
             
             % store the extracted data
             if rod_id <= size(coords, 2)
-                active_coords.rod_names = [active_coords.rod_names; rod_name];
+                active_coords.rod_names{end + 1} = rod_name;
                 active_coords.probe_ids = [active_coords.probe_ids; probe_num];
 
                 if size(coords{rod_id}, 1) < probe_num
