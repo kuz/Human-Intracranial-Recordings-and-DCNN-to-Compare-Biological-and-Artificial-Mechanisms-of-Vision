@@ -2,7 +2,7 @@
 % Loads SUBJECTNAME_MNI.PTS files and returns probe coordinates
 %
 
-function coords = load_mni_pts(filename)
+function [coords, rod_names] = load_mni_pts(filename)
 
 % scan in the .pts file
 fid = fopen(filename,'rt'); 
@@ -29,4 +29,6 @@ for i = 1:length(indata{1})
     else
         coords{map(rod)} = [coords{map(rod)}; x y z];
     end    
+end
+rod_names = keys(map);
 end

@@ -58,42 +58,50 @@ for subject = subjects'
     mni_pts = ['../../Data/Intracranial/Restructured/' subject '_MNI.PTS'];
     coords_mat = ['../../Data/Intracranial/Restructured/' subject '_COORDS.MAT'];
     if exist(mni_pts, 'file') == 2
-        coords = load_mni_pts(mni_pts);
+        [coords, coord_rod_names] = load_mni_pts(mni_pts);
     elseif exist(coords_mat, 'file') == 2
-        coords = load_coords_mat(coords_mat);
+        [coords, coord_rod_names] = load_coords_mat(coords_mat);
     else
         disp('  ERROR: No probe position data found, moving on.')
         continue
     end
     
-    % extract rod names
+    % keep only the data about the channels we are interested in (rods)
+    coord_rod_names = upper(coord_rod_names);
+    v_label_selected = upper(v_label_selected);
+    v_label_selected = strrep(v_label_selected, char(39), 'P');
+    
+    % extract rod names of the selected probes
     rod_names = {};
     for label = v_label_selected
         rod_name = regexp(label, '^[A-z]+', 'match');
         rod_names{end + 1} = rod_name{1};
     end
-    all_rod_names = [rod_names{:}];
+    selected_rod_names = [rod_names{:}];
+    
+    % keep indices only of those selected probes whose rods have coords
+    keep_ids = [];
+    for rn = coord_rod_names
+       keep_ids = [keep_ids; strmatch(rn, selected_rod_names, 'exact')];
+    end
+    
+    % check that number of IDs to keep is equal to the number of probe
+    % locations in the coords matrix
+    if (length(keep_ids) ~= sum(cellfun(@length, coords)))
+        disp(['  ERROR: Matched ' num2str(length(keep_ids)) ' while only ' ...
+               num2str(sum(cellfun(@length, coords))) ' probe locations in ' ...
+               'the list of MNI coordinates.'])
+        continue
+    end
     
     % drop labels and data for the electrodes we are not interested in
-    to_exclude_exact = {'MKR', 'fz', 'cz', 'pz', 'ecg', 'thor', 'abdo', ...
-                        'xyz', 'PULS', 'SpO', 'BEAT'};
-    for excluded_name = to_exclude_exact
-        drop_ids = strmatch(excluded_name, char(all_rod_names), 'exact');
-        m_data(drop_ids, :) = [];
-        v_label_selected(drop_ids) = [];
-        all_rod_names(drop_ids) = [];
-    end
-    
-    to_exclude_fuzzy = {'FORGET'};
-    for excluded_name = to_exclude_fuzzy
-        drop_ids = strmatch(excluded_name, char(all_rod_names));
-        m_data(drop_ids, :) = [];
-        v_label_selected(drop_ids) = [];
-        all_rod_names(drop_ids) = [];
-    end
+    m_data = m_data(keep_ids, :);
+    v_label_selected = v_label_selected(keep_ids);
+    selected_rod_names = selected_rod_names(keep_ids);
     
     % take list of possible rod names
-    rod_names = unique(all_rod_names, 'stable');
+    rod_names = unique(selected_rod_names, 'stable');
+    disp([num2str(length(rod_names)) ' ?= ' num2str(length(coords))])
     disp(rod_names)
     clearvars -except subjects stimseq stimgroups
     continue
