@@ -13,6 +13,7 @@ fclose(fid);
 % the matrix (PROBES x 3) shows xyz coordinates of the probe
 coords = {};
 map = containers.Map();
+rod_names = {};
 for i = 1:length(indata{1})
     
     % extract data units
@@ -28,7 +29,9 @@ for i = 1:length(indata{1})
         coords{map(rod)} = [x y z];
     else
         coords{map(rod)} = [coords{map(rod)}; x y z];
-    end    
+    end
+    
+    rod_names{end + 1} = rod;
 end
-rod_names = keys(map);
+rod_names = unique(rod_names, 'stable');
 end

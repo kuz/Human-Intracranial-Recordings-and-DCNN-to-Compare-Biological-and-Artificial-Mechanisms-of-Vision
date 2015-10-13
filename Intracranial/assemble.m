@@ -93,11 +93,7 @@ for subject = subjects'
     
     % take list of possible rod names
     rod_names = unique(selected_rod_names, 'stable');
-    %disp([num2str(length(rod_names)) ' ?= ' num2str(length(coords))])
-    %disp(rod_names)
-    %clearvars -except subjects stimseq stimgroups
-    %continue
-    
+
     % clazily ugly code to extract probe indices for each rod and MNI
     % coordinates
     active_coords = struct();
