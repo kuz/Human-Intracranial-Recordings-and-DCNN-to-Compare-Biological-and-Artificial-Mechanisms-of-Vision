@@ -100,6 +100,8 @@ for subject = subjects'
     active_coords.rod_names = {};
     active_coords.probe_ids = [];
     active_coords.mni = [];
+    m_data_ids = [];
+    m_data_id = 1;
     for rod_id = 1:length(rod_names)
         
         % extract rod name
@@ -113,27 +115,39 @@ for subject = subjects'
             % extract probe names and number of each probe on its rod
             probe_name = regexp(v_label_selected(probe_id), ['^' rod_name '[0-9]*\.'], 'match');
             probe_name = char(probe_name{1});
+            
+            % check that the rod exists
+            if isempty(probe_name)
+                disp(['  ERROR: Rod ' rod_name ' does not exist in the list' ...
+                      ' of probes. Moving on.'])
+                break_flag = true;
+                break
+            end
+            
             probe_name = probe_name(length(rod_name)+1:end-1);
             probe_num = str2num(probe_name);
-            if length(probe_num) == 0
+            
+            % sometimes first probes miss the id, assign the next
+            % consequitive number
+            if isempty(probe_num)
                 probe_num = last_num + 1;
             end
             last_num = probe_num;
             
             % store the extracted data
             if rod_id <= size(coords, 2)
-                active_coords.rod_names{end + 1} = rod_name;
-                active_coords.probe_ids = [active_coords.probe_ids; probe_num];
-
                 if size(coords{rod_id}, 1) < probe_num
-                    disp(['  ERROR: Subject ' subject ' has ' num2str(probe_num) ...
+                    disp(['  WARNING: Subject ' subject ' has ' num2str(probe_num) ...
                           'th probe on rod ' num2str(rod_id) ' according to v_label_selected' ...
                           ', but actually coords{' num2str(rod_id) '} has only ' ...
                           num2str(size(coords{rod_id}, 1)) ' rows. Moving on.'])
-                    break_flag = true;
-                    break
+                else
+                    active_coords.rod_names{end + 1} = rod_name;
+                    active_coords.probe_ids = [active_coords.probe_ids; probe_num];
+                    active_coords.mni = [active_coords.mni; coords{rod_id}(probe_num, :)];
+                    m_data_ids = [m_data_ids m_data_id];
                 end
-                active_coords.mni = [active_coords.mni; coords{rod_id}(probe_num, :)]; 
+                m_data_id = m_data_id + 1;
             end
         end
         
@@ -153,7 +167,7 @@ for subject = subjects'
     % the signal after the stimulus onset
     s.data = zeros(length(stimseq), length(active_coords.probe_ids), 1300);
     for sid = 1:length(stimseq)
-        s.data(sid, :, :) = m_data(:, pictimes(sid) - 500:pictimes(sid) + 799);
+        s.data(sid, :, :) = m_data(m_data_ids, pictimes(sid) - 500:pictimes(sid) + 799);
     end
     
     % add some metadata
