@@ -76,7 +76,11 @@ for subject = subjects'
     rod_names = {};
     for label = v_label_selected
         rod_name = regexp(label, '^[A-z]+', 'match');
-        rod_names{end + 1} = rod_name{1};
+        if isempty(rod_name{1})
+            rod_names{end + 1} = {'EMPTY'};
+        else
+            rod_names{end + 1} = rod_name{1};
+        end
     end
     selected_rod_names = [rod_names{:}];
     
