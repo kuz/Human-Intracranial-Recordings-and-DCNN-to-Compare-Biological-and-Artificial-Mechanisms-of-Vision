@@ -69,8 +69,10 @@ for subject = subjects'
     % keep only the data about the channels we are interested in (rods)
     coord_rod_names = upper(coord_rod_names);
     coord_rod_names = strrep(coord_rod_names, char(39), 'P');
+    coord_rod_names = strrep(coord_rod_names, ',', '');
     v_label_selected = upper(v_label_selected);
     v_label_selected = strrep(v_label_selected, char(39), 'P');
+    v_label_selected = strrep(v_label_selected, ',', '');
     
     % extract rod names of the selected probes
     rod_names = {};
