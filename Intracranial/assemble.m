@@ -27,7 +27,7 @@ for subject = subjects'
     % load subject data
     filename = ['../../Data/Intracranial/Restructured/' subject '_VISU.EEG.MAT'];
     if exist(filename, 'file') == 2
-        load(['../../Data/Intracranial/Restructured/' subject '_VISU.EEG.MAT'])
+        load(filename)
     else
         disp(['  ERROR: ' filename ' does not exist! Moving on.'])
         continue
