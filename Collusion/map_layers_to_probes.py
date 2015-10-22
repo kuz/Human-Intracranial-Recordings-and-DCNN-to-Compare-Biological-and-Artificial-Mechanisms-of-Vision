@@ -13,10 +13,17 @@ from sklearn import linear_model
 from scipy.stats import pearsonr
 import multiprocessing
 from joblib import Parallel, delayed
+import argparse
 
+# read in command line arguments
+parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
+parser.add_argument('-i', '--sid', dest='sid', type=int, required=True, help='Subject ID')
+args = parser.parse_args()
+sid = int(args.sid)
 
 # parameters
-ncores = multiprocessing.cpu_count()
+#ncores = multiprocessing.cpu_count()
+ncores = 8
 print "Working with %d CPUs" % ncores
 
 def predict_from_layer(layer_activations, layer, subject, subject_id, nsubjects):
@@ -55,7 +62,9 @@ def predict_from_layer(layer_activations, layer, subject, subject_id, nsubjects)
 
     # build a linear predictor for each probe
     for pid in range(len(subject['probes']['probe_ids'])):
-        
+
+        print '  %s, %s, %d' % (subject['name'], layer, pid)
+
         # train a model
         clf = linear_model.Lasso(alpha = 0.1, max_iter=10000)
         clf.fit(train_layer_activity, train_probe_responses[:, pid])
@@ -98,62 +107,52 @@ listing = os.listdir('../../Data/Intracranial/Processed/maxamp/')
 subject_layer_grid = []
 
 # load brain data
-print 'Loading brain data...'
-subjects = [None] * len(listing)
-for i, sfile in enumerate(listing):
+sfile = listing[sid]
+print '  Loading %s...' % sfile
 
-    print '  Loading %s...' % sfile
+# load the matlab structure 
+s = sio.loadmat('../../Data/Intracranial/Processed/maxamp/%s' % sfile)
+subject = {}
+subject['stimseq'] = [x[0][0] for x in s['s']['stimseq'][0][0]]
+subject['stimgroups'] = [x[0] for x in s['s']['stimgroups'][0][0]]
+subject['probes'] = {}
+subject['probes']['rod_names'] = list(s['s']['probes'][0][0][0][0][0])
+subject['probes']['probe_ids'] = [x[0] for x in list(s['s']['probes'][0][0][0][0][1])]
+subject['probes']['mni'] = s['s']['probes'][0][0][0][0][2]
+subject['data'] = s['s']['data'][0][0]
+subject['name'] = s['s']['name'][0][0][0]
 
-    # load the matlab structure 
-    s = sio.loadmat('../../Data/Intracranial/Processed/maxamp/%s' % sfile)
-    subject = {}
-    subject['stimseq'] = [x[0][0] for x in s['s']['stimseq'][0][0]]
-    subject['stimgroups'] = [x[0] for x in s['s']['stimgroups'][0][0]]
-    subject['probes'] = {}
-    subject['probes']['rod_names'] = list(s['s']['probes'][0][0][0][0][0])
-    subject['probes']['probe_ids'] = [x[0] for x in list(s['s']['probes'][0][0][0][0][1])]
-    subject['probes']['mni'] = s['s']['probes'][0][0][0][0][2]
-    subject['data'] = s['s']['data'][0][0]
-    subject['name'] = s['s']['name'][0][0][0]
-
-    subjects[i] = subject
-
-    for layer in layers:
-        subject_layer_grid.append((i, layer))
+for layer in layers:
+    subject_layer_grid.append((sid, layer))
 
 # for each probe, layer combination train a linear model to predict the probe response from the layer activations
-print '  Training linear models...'
+print 'Training linear models...'
 start = time.time()
 results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)
-                                 (activations[layer], layer, subjects[subject_id], subject_id, len(subjects))
+                                 (activations[layer], layer, subject, subject_id, 1)
                                  for (subject_id, layer) in subject_layer_grid)
 print 'Training the models took', time.time() - start
 
 # aggregate results and store to files
-print 'Aggregating results...'
-coefficients = {}
+print 'Storing mapping for %s...' % subject['name']
+
 # prepare the structure
-for sname in [s['name'] for s in subjects]:
-    coefficients[sname] = [None] * 8
+coefficients = [None] * 8
 
 # put every result to a corresponding cell
 for record in results:
     sname, layer, r_coefs = record
-    coefficients[sname][layers.index(layer)] = r_coefs
+    coefficients[layers.index(layer)] = r_coefs
 
-# build the mapping and store the result
-for sname in [s['name'] for s in subjects]:
+# build the mapping
+r_coefs = np.vstack(coefficients)
+r_coefs = np.nan_to_num(r_coefs)
 
-    print 'Storing mapping for %s...' % subject['name']
+# for each probe find the layer it is most correlated with
+probe_to_layer_map = np.argmax(r_coefs, axis=0) + 1
 
-    r_coefs = np.vstack(coefficients[sname])
-    r_coefs = np.nan_to_num(r_coefs)
-
-    # for each probe find the layer it is most correlated with
-    probe_to_layer_map = np.argmax(r_coefs, axis=0) + 1
-
-    # store probe to layer mapping for the subject
-    np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s.txt' % subject['name'], probe_to_layer_map, fmt='%i')
+# store probe to layer mapping for the subject
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s.txt' % subject['name'], probe_to_layer_map, fmt='%i')
 
     
 
