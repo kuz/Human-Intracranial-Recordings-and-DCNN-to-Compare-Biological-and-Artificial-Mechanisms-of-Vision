@@ -9,9 +9,12 @@ addpath('/gpfs/hpchome/a72073/Software/Elan/misc/matlab')
 
 % compose a list of .eeg file
 eegfiles = dir('../../Data/Intracranial/Restructured/*.EEG');
+eegfiles = struct();
+eegfiles(1).name = 'LYONNEURO_2013_MAZM_VISU.EEG'
+
 
 % process .eeg files one by one
-for i = 77:length(eegfiles)
+for i = 1:length(eegfiles)
 
     % display progress
     disp(['Processing ' eegfiles(i).name ' ' num2str(i) '/' num2str(length(eegfiles))])

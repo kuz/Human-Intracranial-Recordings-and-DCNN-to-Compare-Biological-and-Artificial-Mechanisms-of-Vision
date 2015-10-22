@@ -7,7 +7,7 @@
 listing = dir('../../../Data/Intracranial/Processed/LFP/*.mat');
 
 % for each subject
-for sfile = listing
+for sfile = listing'
 
     disp(['Processing ' sfile.name])
     
