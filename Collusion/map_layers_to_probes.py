@@ -18,15 +18,17 @@ import argparse
 # read in command line arguments
 parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
 parser.add_argument('-i', '--sid', dest='sid', type=int, required=True, help='Subject ID')
+parset.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory under Processed/')
 args = parser.parse_args()
 sid = int(args.sid)
+featureset = str(args.featureset)
 
 # parameters
 #ncores = multiprocessing.cpu_count()
 ncores = 8
 print "Working with %d CPUs" % ncores
 
-def predict_from_layer(layer_activations, layer, subject, subject_id, nsubjects):
+def predict_from_layer(layer_activations, layer, subject, subject_id, nsubjects, dnn_stimuli):
     """
     Takes one layer and predicts all probe activations from that layer
     """
@@ -101,7 +103,7 @@ dnn_stimuli = np.loadtxt('../../Data/DNN/imagesdone.txt', dtype={'names': ('stim
 dnn_stimuli = [x[0].split('.')[0] for x in dnn_stimuli]
 
 # read list of subjects
-listing = os.listdir('../../Data/Intracranial/Processed/maxamp/')
+listing = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
 
 # grid of (subject, layer) pairs to compute
 subject_layer_grid = []
@@ -111,7 +113,7 @@ sfile = listing[sid]
 print '  Loading %s...' % sfile
 
 # load the matlab structure 
-s = sio.loadmat('../../Data/Intracranial/Processed/maxamp/%s' % sfile)
+s = sio.loadmat('../../Data/Intracranial/Processed/%s/%s' % (featureset, sfile))
 subject = {}
 subject['stimseq'] = [x[0][0] for x in s['s']['stimseq'][0][0]]
 subject['stimgroups'] = [x[0] for x in s['s']['stimgroups'][0][0]]
@@ -129,7 +131,7 @@ for layer in layers:
 print 'Training linear models...'
 start = time.time()
 results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)
-                                 (activations[layer], layer, subject, subject_id, 1)
+                                 (activations[layer], layer, subject, subject_id, len(listing), dnn_stimuli)
                                  for (subject_id, layer) in subject_layer_grid)
 print 'Training the models took', time.time() - start
 
