@@ -18,14 +18,14 @@ import argparse
 # read in command line arguments
 parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
 parser.add_argument('-i', '--sid', dest='sid', type=int, required=True, help='Subject ID')
-parset.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory under Processed/')
+parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory under Processed/')
 args = parser.parse_args()
 sid = int(args.sid)
 featureset = str(args.featureset)
 
 # parameters
 #ncores = multiprocessing.cpu_count()
-ncores = 8
+ncores = 2
 print "Working with %d CPUs" % ncores
 
 # train linear model to predict probe [pid] response from [layer]
@@ -79,7 +79,7 @@ listing = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
 
 # load brain data
 sfile = listing[sid]
-print '  Loading %s...' % sfile
+print 'Loading %s...' % sfile
 
 # load the matlab structure 
 s = sio.loadmat('../../Data/Intracranial/Processed/%s/%s' % (featureset, sfile))
@@ -115,38 +115,17 @@ for layer in layers:
         probe_responses = subject['data']
 
 # grid of (subject, layer, pribe) triples to compute in parallel
-#parallel_grid = []
-#for layer in layers:
-#    for pid in range(len(subject['probes']['probe_ids'])):
-#        parallel_grid.append((layer, pid))
-
 parallel_grid = []
-for layer in [fc7']:
-    for pid in range(80, 135):
+for layer in layers:
+    for pid in range(len(subject['probes']['probe_ids'])):
         parallel_grid.append((layer, pid))
 
 # for each (layer, probe) combination train a linear model to predict the probe response from the layer activations
+start = time.time()
 results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)(subject['name'], layer, pid,
                                                              layer_activity[layer][train_idx, :], layer_activity[layer][assign_idx, :],
                                                              probe_responses[train_idx, pid], probe_responses[assign_idx, pid])
                                   for (layer, pid) in parallel_grid)
-
-
-print 'Done for now'
-exit()
-
-# place to store coefficients
-r_coefs = np.zeros(nprobes)
-
-
-
-
-# for each probe, layer combination train a linear model to predict the probe response from the layer activations
-print 'Training linear models...'
-start = time.time()
-results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)
-                                 (activations[layer], layer, subject, subject_id, len(listing), dnn_stimuli)
-                                 for (subject_id, layer) in subject_layer_grid)
 print 'Training the models took', time.time() - start
 
 # aggregate results and store to files
@@ -154,11 +133,13 @@ print 'Storing mapping for %s...' % subject['name']
 
 # prepare the structure
 coefficients = [None] * 8
+for lid in range(len(layers)):
+    coefficients[lid] = [0.0] * nprobes
 
 # put every result to a corresponding cell
 for record in results:
-    sname, layer, r_coefs = record
-    coefficients[layers.index(layer)] = r_coefs
+    layer, pid, r = record
+    coefficients[layers.index(layer)][pid] = r
 
 # build the mapping
 r_coefs = np.vstack(coefficients)
@@ -167,8 +148,13 @@ r_coefs = np.nan_to_num(r_coefs)
 # for each probe find the layer it is most correlated with
 probe_to_layer_map = np.argmax(r_coefs, axis=0) + 1
 
+# replace layer ID with `-1` if no significant assignments were found (all 0s)
+for pid in range(nprobes):
+    if np.sum(r_coefs[:, pid]) == 0.0:
+        probe_to_layer_map[pid] = -1
+
 # store probe to layer mapping for the subject
-np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s.txt' % subject['name'], probe_to_layer_map, fmt='%i')
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s/%s.txt' % (featureset, subject['name']), probe_to_layer_map, fmt='%i')
 
     
 

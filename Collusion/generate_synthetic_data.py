@@ -58,6 +58,8 @@ for layer in layers:
 nprobes = s['s']['data'][0][0].shape[1]
 nprobes_per_layer = nprobes / 7
 
+
+
 for lid, pstart in enumerate(range(0, nprobes, nprobes_per_layer)):
 
     # decide the probe range to be assigned to the layer `lid`
@@ -67,17 +69,16 @@ for lid, pstart in enumerate(range(0, nprobes, nprobes_per_layer)):
     # generate the set of weights to multiply layer activations
     # to get the responses of the probes in range (pstart, pend)
     d = activations[layers[lid]].shape[1]
-    weights = np.random.pareto(3, 2 * d)
-    weights = weights[weights < 100]
-    weights = np.matrix(weights[0:d]).T
+    weights = np.matrix(np.random.uniform(5.0, 10.0, d)).T
+    drop_idx = np.random.choice(range(1, d), d - 30, replace=False)
+    weights[drop_idx] = np.matrix(np.random.uniform(-0.5, 0.5, len(drop_idx))).T
 
     # generate each probe's activity, for the probes within the 
     # [pstart, pend) range the activity will be calculated as
     # the mulitpication of the layer activation by the weights
-    one_probe_activity = activations[layers[lid]] * weights
-    one_probe_activity = scale(one_probe_activity) * 1.5 + 3.5
+    one_probe_activity = scale(activations[layers[lid]] * weights)
     all_probe_activity = np.tile(one_probe_activity, nprobes_in_this_layer)
-    noise = np.random.normal(0, 0.5, (319, nprobes_in_this_layer))
+    noise = np.random.uniform(-0.5, 0.5, (319, nprobes_in_this_layer))
     s['s']['data'][0][0][:, pstart:pend] = all_probe_activity + noise
 
-sio.savemat('../../Data/Intracranial/Processed/synthetic/AL_25FEV13N.mat')
+sio.savemat('../../Data/Intracranial/Processed/synthetic/AL_25FEV13N.mat', s)
