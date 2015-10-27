@@ -146,7 +146,7 @@ print 'Training linear models...'
 start = time.time()
 results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)
                                  (activations[layer], layer, subject, subject_id, len(listing), dnn_stimuli)
-                                 for (subject_id, layer) in parallel_grid)
+                                 for (subject_id, layer) in subject_layer_grid)
 print 'Training the models took', time.time() - start
 
 # aggregate results and store to files
