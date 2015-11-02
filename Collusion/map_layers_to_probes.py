@@ -25,7 +25,7 @@ featureset = str(args.featureset)
 
 # parameters
 #ncores = multiprocessing.cpu_count()
-ncores = 2
+ncores = 50
 print "Working with %d CPUs" % ncores
 
 # train linear model to predict probe [pid] response from [layer]
@@ -36,7 +36,7 @@ def predict_from_layer(subject_name, layer, pid,
                        train_probe_responses, assign_probe_responses):
 
     # train a model
-    clf = linear_model.Lasso(alpha = 0.1, max_iter=10000)
+    clf = linear_model.Lasso(alpha = 0.1, max_iter=1000)
     clf.fit(train_layer_activity, train_probe_responses)
 
     # attempt prediction on the assignment set
@@ -51,7 +51,7 @@ def predict_from_layer(subject_name, layer, pid,
         r = 0.0
 
     # display progress
-    print 'Fitted %s: %s to probe %d -- %f (p=%f)' % (subject_name, layer, pid, r, pval)
+    print 'Fitted  %s: %s to probe %d -- %f (p=%f)' % (subject_name, layer, pid, r, pval)
 
     return (layer, pid, r)
 
@@ -122,7 +122,7 @@ for layer in layers:
 
 # for each (layer, probe) combination train a linear model to predict the probe response from the layer activations
 start = time.time()
-results = Parallel(n_jobs=ncores)(delayed(predict_from_layer)(subject['name'], layer, pid,
+results = Parallel(n_jobs=ncores, backend="threading")(delayed(predict_from_layer)(subject['name'], layer, pid,
                                                              layer_activity[layer][train_idx, :], layer_activity[layer][assign_idx, :],
                                                              probe_responses[train_idx, pid], probe_responses[assign_idx, pid])
                                   for (layer, pid) in parallel_grid)
