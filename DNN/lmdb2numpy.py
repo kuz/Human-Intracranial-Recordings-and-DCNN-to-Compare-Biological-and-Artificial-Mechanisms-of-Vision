@@ -35,12 +35,12 @@ with env.begin() as txn:
 
             # lazily initialize matrix, once we know number of features
             if data is None:
-                num_features = arr.shape[1]
+                num_features = np.prod(arr.shape)
                 print "Number of features: ", num_features
                 data = np.empty((num_images, num_features))
 
             # copy data to matrix
-            data[int(key), ] = arr[0, :, 0]
+            data[int(key), ] = arr.reshape(num_features)
 
             # display progress
             sys.stdout.write('{0}/{1}\r'.format(counter, num_images))
