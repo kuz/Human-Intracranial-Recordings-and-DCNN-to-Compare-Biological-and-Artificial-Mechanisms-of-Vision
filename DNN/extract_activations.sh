@@ -16,7 +16,7 @@ do
 	echo " "
 	echo "Extracting activations from layer $layer ..."
 	echo "--------------------------------------------"
-	$CAFFEHOME/build/tools/extract_features.bin model/bvlc_reference_caffenet.caffemodel model/extractor.prototxt \
+	$CAFFEHOME/build/tools/extract_features.bin model/bvlc_empty_caffenet.caffemodel model/extractor.prototxt \
 											$layer activations/lmdb/$layer 419 lmdb GPU 0
 
 	# convert lmdb into numpy

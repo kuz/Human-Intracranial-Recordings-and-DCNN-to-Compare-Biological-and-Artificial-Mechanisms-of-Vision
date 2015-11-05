@@ -25,7 +25,7 @@ featureset = str(args.featureset)
 
 # parameters
 #ncores = multiprocessing.cpu_count()
-ncores = 50
+ncores = 10
 print "Working with %d CPUs" % ncores
 
 # train linear model to predict probe [pid] response from [layer]
