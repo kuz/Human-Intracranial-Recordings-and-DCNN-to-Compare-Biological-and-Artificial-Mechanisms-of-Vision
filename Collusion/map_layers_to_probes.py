@@ -51,9 +51,14 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     #train_layer_activity = pca.fit_transform(train_layer_activity)
     #assign_layer_activity = pca.transform(assign_layer_activity)
 
-    # repeat predictability estimation 10 times
-    r_scores = np.zeros(10)
-    for run in range(10):
+    # parameters
+    n_runs = 7
+    n_cv = 10
+    n_iter = 50
+
+    # repeat predictability estimation [n_runs] times
+    r_scores = np.zeros(n_runs)
+    for run in range(n_runs):
 
         # reshuffle the dataset to force another instance of cross-validation
         shuffle_idx = np.random.choice(range(layer_activity_all.shape[0]), size=layer_activity_all.shape[0], replace=False)
@@ -61,8 +66,8 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         probe_responses_all = probe_responses_all[shuffle_idx]
 
         # predict piecewise all of the data using CV
-        clf = linear_model.Lasso(alpha = 0.1, max_iter=100)
-        predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=10)
+        clf = linear_model.Lasso(alpha = 0.1, max_iter=n_iter)
+        predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv)
 
         # store the correlation coefficient
         r, pval = pearsonr(probe_responses_all, predicted)
@@ -72,8 +77,15 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
             r = 0.0
         r_scores[run] = r
 
+    # to consider a probe to be a significant match we request that at least half
+    # of the reshuflings have indicated is as such
+    if np.sum(r_scores > 0.0) >= n_runs / 2.0:
+        final_score = np.mean(r_scores)
+    else:
+        final_score = 0.0
+
     # display progress
-    print 'Fitted  %s: %s to probe %d -- %f (%s)' % (subject_name, layer, pid, np.mean(r_scores), r_scores)
+    print 'Fitted  %s: %s to probe %d -- %f (%s)' % (subject_name, layer, pid, final_score, r_scores)
 
     return (layer, pid, r)
 
@@ -152,7 +164,7 @@ layer_activity = layer_activity_pca
 # grid of (subject, layer, pribe) triples to compute in parallel
 parallel_grid = []
 #for layer in layers:
-for layer in ['fc6']:
+for layer in ['conv1']:
     for pid in range(len(subject['probes']['probe_ids'])):
         parallel_grid.append((layer, pid))
 
