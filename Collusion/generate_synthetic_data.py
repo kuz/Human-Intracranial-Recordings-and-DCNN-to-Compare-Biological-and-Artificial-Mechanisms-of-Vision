@@ -24,7 +24,7 @@ import scipy.io as sio
 from sklearn.preprocessing import scale
 
 print 'Loading list of layers...'
-layers = os.listdir('../../Data/DNN/Activations/numpy')
+layers = os.listdir('../../Repository/DNN/activations/numpy')
 
 # load list of stimuli in the order they were presented to DNN
 print 'Loading DNN stimuli...'
@@ -52,13 +52,11 @@ for stimulus in subject['stimseq']:
 print 'Loading DNN activations...'
 activations = {}
 for layer in layers:
-    activations[layer] = np.load('../../Data/DNN/Activations/numpy/%s/activations.npy' % layer)
+    activations[layer] = np.load('../../Repository/DNN/activations/numpy/%s/activations.npy' % layer)
     activations[layer] = np.matrix(activations[layer][keep_dnn_stimuli, :])
 
 nprobes = s['s']['data'][0][0].shape[1]
 nprobes_per_layer = nprobes / 7
-
-
 
 for lid, pstart in enumerate(range(0, nprobes, nprobes_per_layer)):
 
@@ -69,16 +67,19 @@ for lid, pstart in enumerate(range(0, nprobes, nprobes_per_layer)):
     # generate the set of weights to multiply layer activations
     # to get the responses of the probes in range (pstart, pend)
     d = activations[layers[lid]].shape[1]
-    weights = np.matrix(np.random.uniform(5.0, 10.0, d)).T
-    drop_idx = np.random.choice(range(1, d), d - 30, replace=False)
-    weights[drop_idx] = np.matrix(np.random.uniform(-0.5, 0.5, len(drop_idx))).T
+    #weights = np.matrix(np.random.uniform(-100.0, 100.0, d)).T
+    weights = np.matrix(np.random.exponential(1.0, d)).T
+    #drop_idx = np.random.choice(range(1, d), d - 30, replace=False)
+    #weights[drop_idx] = np.matrix(np.random.uniform(-0.5, 0.5, len(drop_idx))).T
+    #weights[drop_idx] = np.matrix(np.zeros(len(drop_idx))).T
 
     # generate each probe's activity, for the probes within the 
     # [pstart, pend) range the activity will be calculated as
     # the mulitpication of the layer activation by the weights
     one_probe_activity = scale(activations[layers[lid]] * weights)
     all_probe_activity = np.tile(one_probe_activity, nprobes_in_this_layer)
-    noise = np.random.uniform(-0.5, 0.5, (319, nprobes_in_this_layer))
-    s['s']['data'][0][0][:, pstart:pend] = all_probe_activity + noise
+    #noise = np.random.uniform(-0.5, 0.5, (319, nprobes_in_this_layer))
+    #s['s']['data'][0][0][:, pstart:pend] = all_probe_activity + noise
+    s['s']['data'][0][0][:, pstart:pend] = all_probe_activity
 
 sio.savemat('../../Data/Intracranial/Processed/synthetic/AL_25FEV13N.mat', s)

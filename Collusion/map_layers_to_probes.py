@@ -10,10 +10,13 @@ import time
 import numpy as np
 import scipy.io as sio
 from sklearn import linear_model
+from sklearn import cross_validation
+from sklearn.decomposition import PCA
 from scipy.stats import pearsonr
 import multiprocessing
 from joblib import Parallel, delayed
 import argparse
+
 
 # read in command line arguments
 parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
@@ -31,34 +34,53 @@ print "Working with %d CPUs" % ncores
 # train linear model to predict probe [pid] response from [layer]
 # activations, measure the prediction performace on the test set
 # of stimuli
-def predict_from_layer(subject_name, layer, pid,
-                       train_layer_activity, assign_layer_activity,
-                       train_probe_responses, assign_probe_responses):
+def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_responses_all):
 
-    # train a model
-    clf = linear_model.Lasso(alpha = 0.1, max_iter=1000)
-    clf.fit(train_layer_activity, train_probe_responses)
+    # parameter search
+    """
+    alphas = [0.00001, 0.001, 0.1, 1, 10, 100]
+    for a in alphas:
+        clf = linear_model.Lasso(alpha=a, max_iter=100)
+        predicted = cross_validation.cross_val_predict(clf, train_layer_activity, train_probe_responses, cv=5)
+        r, pval = pearsonr(train_probe_responses, predicted)
+        print '%s: %s to probe %d with alpha %f gave %.4f' % (subject_name, layer, pid, a, r)
+    """
 
-    # attempt prediction on the assignment set
-    true = assign_probe_responses
-    predicted = clf.predict(assign_layer_activity)
+    # apply PCA
+    #pca = PCA(n_components=150)
+    #train_layer_activity = pca.fit_transform(train_layer_activity)
+    #assign_layer_activity = pca.transform(assign_layer_activity)
 
-    # store the correlation coefficient
-    r, pval = pearsonr(true, predicted)
+    # repeat predictability estimation 10 times
+    r_scores = np.zeros(10)
+    for run in range(10):
 
-    # drop not significant results
-    if pval > 0.05:
-        r = 0.0
+        # reshuffle the dataset to force another instance of cross-validation
+        shuffle_idx = np.random.choice(range(layer_activity_all.shape[0]), size=layer_activity_all.shape[0], replace=False)
+        layer_activity_all = layer_activity_all[shuffle_idx]
+        probe_responses_all = probe_responses_all[shuffle_idx]
+
+        # predict piecewise all of the data using CV
+        clf = linear_model.Lasso(alpha = 0.1, max_iter=100)
+        predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=10)
+
+        # store the correlation coefficient
+        r, pval = pearsonr(probe_responses_all, predicted)
+
+        # drop not significant results
+        if pval > 0.001 or r < 0.0:
+            r = 0.0
+        r_scores[run] = r
 
     # display progress
-    print 'Fitted  %s: %s to probe %d -- %f (p=%f)' % (subject_name, layer, pid, r, pval)
+    print 'Fitted  %s: %s to probe %d -- %f (%s)' % (subject_name, layer, pid, np.mean(r_scores), r_scores)
 
     return (layer, pid, r)
 
 
 # prepare lists of probe coordinates for each layer
 print 'Loading list of layers...'
-layers = os.listdir('../../Data/DNN/Activations/numpy')
+layers = os.listdir('../../Repository/DNN/activations/numpy')
 assignments = {}
 for layer in layers:
     assignments[layer] = []
@@ -67,7 +89,7 @@ for layer in layers:
 print 'Loading DNN activations...'
 activations = {}
 for layer in layers:
-    activations[layer] = np.load('../../Data/DNN/Activations/numpy/%s/activations.npy' % layer)
+    activations[layer] = np.load('../../Repository/DNN/activations/numpy/%s/activations.npy' % layer)
 
 # load list of stimuli in the order they were presented to DNN
 print 'Loading DNN stimuli...'
@@ -100,8 +122,8 @@ nprobes = subject['data'].shape[1]
 # pick 70% of stimuli for training and 30% for layer assignment
 # TODO: should this be before the for cycle
 # TODO: replace with cross-validation
-train_idx = np.random.choice(range(nstims), size=int(nstims * 0.7), replace=False)
-assign_idx = list(set(range(nstims)) - set(train_idx))
+#train_idx = np.random.choice(range(nstims), size=int(nstims * 0.7), replace=False)
+#assign_idx = list(set(range(nstims)) - set(train_idx))
 
 # create the dataset: for each layer we'll have DNN activations as features
 # and probe response as the target value to predict
@@ -114,17 +136,30 @@ for layer in layers:
         layer_activity[layer][sid_brain, :] = activations[layer][sid_dnn, :]
         probe_responses = subject['data']
 
+# apply PCA to layer activations
+"""
+npcs = 150
+layer_activity_pca = {}
+for layer in layers:
+    print 'Computing PCA for layer %s' % layer
+    pca = PCA(n_components=npcs)
+    layer_activity_pca[layer] = np.zeros((nstims, npcs))
+    layer_activity_pca[layer][train_idx, :] = pca.fit_transform(layer_activity[layer][train_idx, :])
+    layer_activity_pca[layer][assign_idx, :] = pca.transform(layer_activity[layer][assign_idx, :])
+layer_activity = layer_activity_pca
+"""
+
 # grid of (subject, layer, pribe) triples to compute in parallel
 parallel_grid = []
-for layer in layers:
+#for layer in layers:
+for layer in ['fc6']:
     for pid in range(len(subject['probes']['probe_ids'])):
         parallel_grid.append((layer, pid))
 
 # for each (layer, probe) combination train a linear model to predict the probe response from the layer activations
 start = time.time()
 results = Parallel(n_jobs=ncores, backend="threading")(delayed(predict_from_layer)(subject['name'], layer, pid,
-                                                             layer_activity[layer][train_idx, :], layer_activity[layer][assign_idx, :],
-                                                             probe_responses[train_idx, pid], probe_responses[assign_idx, pid])
+                                                             layer_activity[layer], probe_responses[:, pid])
                                   for (layer, pid) in parallel_grid)
 print 'Training the models took', time.time() - start
 
