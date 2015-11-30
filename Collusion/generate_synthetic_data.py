@@ -23,8 +23,11 @@ import numpy as np
 import scipy.io as sio
 from sklearn.preprocessing import scale
 
+# parameters
+np_activation_data = 'numpy.reference'
+
 print 'Loading list of layers...'
-layers = os.listdir('../../Repository/DNN/activations/numpy')
+layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
 
 # load list of stimuli in the order they were presented to DNN
 print 'Loading DNN stimuli...'
@@ -52,7 +55,7 @@ for stimulus in subject['stimseq']:
 print 'Loading DNN activations...'
 activations = {}
 for layer in layers:
-    activations[layer] = np.load('../../Repository/DNN/activations/numpy/%s/activations.npy' % layer)
+    activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
     activations[layer] = np.matrix(activations[layer][keep_dnn_stimuli, :])
 
 nprobes = s['s']['data'][0][0].shape[1]
