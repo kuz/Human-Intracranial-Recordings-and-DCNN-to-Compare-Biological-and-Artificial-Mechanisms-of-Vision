@@ -8,10 +8,6 @@ addpath('./mniplots')
 % load the list of subjects
 subjects = textread('subjects.txt', '%s', 'delimiter', '\n');
 
-% normally loaded form subjects.txt
-% for testing purposes given manually here as
-%subjects = {'LYONNEURO_2013_ROTP'};
-
 % load the sequence of stimuli
 stimseq = textread('stimsequence.txt', '%s', 'delimiter', '\n');
 stimgroups = textread('stimgroups.txt', '%d', 'delimiter', '\n');
@@ -169,11 +165,11 @@ for subject = subjects'
     
     s.probes = active_coords;
     
-    % stimulus is shown for 200ms, extract the corresponding 1000ms of
-    % the signal after the stimulus onset
-    s.data = zeros(length(stimseq), length(active_coords.probe_ids), 1300);
+    % Stimulus is shown for 200ms (102 tp). We extract the -500 ms (256 tp)
+    % as baseline and 1000ms (512 tp) of signal after stimulus onset 
+    s.data = zeros(length(stimseq), length(active_coords.probe_ids), 768);
     for sid = 1:length(stimseq)
-        s.data(sid, :, :) = m_data(m_data_ids, pictimes(sid) - 500:pictimes(sid) + 799);
+        s.data(sid, :, :) = m_data(m_data_ids, pictimes(sid) - 256:pictimes(sid) + 255);
     end
     
     % add some metadata
