@@ -2,11 +2,14 @@
 % Plot probes with colors based on the assigned layer
 %
 
+%% Parameters
+featureset = 'maxamp';
+
 %% List of subject for whom we have the mapping
-listing = dir('../../Data/Intracranial/Probe_to_Layer_Maps/*.txt')
+listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt']);
 
 %% Load mesh data
-addpath('../Intracranial/lib/mnimesh')
+addpath('../Intracranial/lib/mnimesh');
 [tri, coord, nbr, normal]=mni_getmesh('../Intracranial/lib/mnimesh/outersurface.obj');
 color = zeros(size(coord(3, :)));
 
@@ -14,7 +17,7 @@ color = zeros(size(coord(3, :)));
 %% Generate figure
 
 % layer color scale
-layercolors = jet(8);
+layercolors = flipud(autumn(8));
 
 % plot the mesh
 fig = figure('Position', [0, 0, 1600, 300], 'Visible', 'off');
@@ -36,16 +39,19 @@ for fid = 1:length(listing)
     load(['../../Data/Intracranial/Processed/maxamp/' subject '.mat'])
     
     % load the mapping
-    probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' listing(fid).name]);
+    probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' ...
+                              featureset '/' listing(fid).name]);
     
     % plot each prob in corresponding color
     for pid = 1:length(s.probes.mni)
-        plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
-              '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 20);
+        if probe_to_layer_map(pid) ~= -1
+            plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
+                  '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 20);
+        end
     end
     
     % clear workspace
-    clearvars -except xview tri normal nbr mesh listing layercolors fig coord color
+    clearvars -except xview tri normal nbr mesh listing layercolors fig coord color featureset
     
 end
 
@@ -60,6 +66,6 @@ view([0, 0, 1]);
        
 % save the figure
 drawnow;
-r = 50;
+r = 60;
 set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 1600 300]/r);
-print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/ALL.png']);
+print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/' featureset '/ALL.png']);

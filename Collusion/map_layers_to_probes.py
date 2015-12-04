@@ -28,8 +28,9 @@ featureset = str(args.featureset)
 
 # parameters
 #ncores = multiprocessing.cpu_count()
-ncores = 10
+ncores = 12
 print "Working with %d CPUs" % ncores
+np_activation_data = 'numpy.reference'
 
 # train linear model to predict probe [pid] response from [layer]
 # activations, measure the prediction performace on the test set
@@ -92,7 +93,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
 
 # prepare lists of probe coordinates for each layer
 print 'Loading list of layers...'
-layers = os.listdir('../../Repository/DNN/activations/numpy')
+layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
 assignments = {}
 for layer in layers:
     assignments[layer] = []
@@ -101,7 +102,7 @@ for layer in layers:
 print 'Loading DNN activations...'
 activations = {}
 for layer in layers:
-    activations[layer] = np.load('../../Repository/DNN/activations/numpy/%s/activations.npy' % layer)
+    activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
 
 # load list of stimuli in the order they were presented to DNN
 print 'Loading DNN stimuli...'
@@ -131,12 +132,6 @@ subject['name'] = s['s']['name'][0][0][0]
 nstims = subject['data'].shape[0]
 nprobes = subject['data'].shape[1]
 
-# pick 70% of stimuli for training and 30% for layer assignment
-# TODO: should this be before the for cycle
-# TODO: replace with cross-validation
-#train_idx = np.random.choice(range(nstims), size=int(nstims * 0.7), replace=False)
-#assign_idx = list(set(range(nstims)) - set(train_idx))
-
 # create the dataset: for each layer we'll have DNN activations as features
 # and probe response as the target value to predict
 layer_activity = {}
@@ -163,8 +158,7 @@ layer_activity = layer_activity_pca
 
 # grid of (subject, layer, pribe) triples to compute in parallel
 parallel_grid = []
-#for layer in layers:
-for layer in ['conv1']:
+for layer in layers:
     for pid in range(len(subject['probes']['probe_ids'])):
         parallel_grid.append((layer, pid))
 

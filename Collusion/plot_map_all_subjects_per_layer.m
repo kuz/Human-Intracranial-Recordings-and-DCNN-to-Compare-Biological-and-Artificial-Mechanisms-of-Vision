@@ -3,8 +3,11 @@
 % Each plot holds one layer and all subjects
 %
 
+%% Parameters
+featureset = 'maxamp';
+
 %% List of subject for whom we have the mapping
-listing = dir('../../Data/Intracranial/Probe_to_Layer_Maps/*.txt')
+listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt'])
 
 %% Load mesh data
 addpath('../Intracranial/lib/mnimesh')
@@ -15,7 +18,7 @@ color = zeros(size(coord(3, :)));
 %% Generate figure
 
 % layer color scale
-layercolors = jet(8);
+layercolors = flipud(autumn(8));
 
 % for each layer
 for lid = 1:8
@@ -40,18 +43,21 @@ for lid = 1:8
         load(['../../Data/Intracranial/Processed/maxamp/' subject '.mat'])
 
         % load the mapping
-        probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' listing(fid).name]);
+        probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' ...
+                                   featureset '/' listing(fid).name]);
 
         % plot each prob in corresponding color
         for pid = 1:length(s.probes.mni)
-            if probe_to_layer_map(pid) == lid
-                plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
-                      '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 20);
+            if probe_to_layer_map(pid) ~= -1
+                if probe_to_layer_map(pid) == lid
+                    plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
+                          '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 20);
+                end
             end
         end
 
         % clear workspace
-        clearvars -except xview tri normal nbr mesh listing layercolors fig coord color lid
+        clearvars -except xview tri normal nbr mesh listing layercolors fig coord color lid featureset
 
     end
 
@@ -66,8 +72,8 @@ for lid = 1:8
 
     % save the figure
     drawnow;
-    r = 50;
+    r = 70;
     set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 1600 300]/r);
-    print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/ALL-layer-' num2str(lid) '.png']);
+    print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/' featureset '/ALL-layer-' num2str(lid) '.png']);
     
 end
