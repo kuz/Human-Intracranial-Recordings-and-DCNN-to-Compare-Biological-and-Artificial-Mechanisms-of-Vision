@@ -169,7 +169,7 @@ for subject = subjects'
     % as baseline and 1000ms (512 tp) of signal after stimulus onset 
     s.data = zeros(length(stimseq), length(active_coords.probe_ids), 768);
     for sid = 1:length(stimseq)
-        s.data(sid, :, :) = m_data(m_data_ids, pictimes(sid) - 256:pictimes(sid) + 255);
+        s.data(sid, :, :) = m_data(m_data_ids, (pictimes(sid) - 256):(pictimes(sid) + 511));
     end
     
     % add some metadata
