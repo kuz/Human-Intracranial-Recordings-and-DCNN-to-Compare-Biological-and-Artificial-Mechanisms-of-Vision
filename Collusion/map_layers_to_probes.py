@@ -21,16 +21,19 @@ import argparse
 # read in command line arguments
 parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
 parser.add_argument('-i', '--sid', dest='sid', type=int, required=True, help='Subject ID')
-parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory under Processed/')
+parser.add_argument('-a', '--activations', dest='np_activation_data', type=str, required=True, help='Directory with DNN activations (DNN/activations/?)')
+parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory with brain features (Processed/?)')
 args = parser.parse_args()
 sid = int(args.sid)
+np_activation_data = str(args.np_activation_data)
 featureset = str(args.featureset)
 
 # parameters
+print 'Mapping subject %d represented with "%s" to %s DNN activations' % (sid, featureset, np_activation_data)
 #ncores = multiprocessing.cpu_count()
 ncores = 12
 print "Working with %d CPUs" % ncores
-np_activation_data = 'numpy.reference'
+
 
 # train linear model to predict probe [pid] response from [layer]
 # activations, measure the prediction performace on the test set
