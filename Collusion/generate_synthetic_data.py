@@ -25,6 +25,9 @@ from sklearn.preprocessing import scale
 
 # parameters
 np_activation_data = 'numpy.reference'
+featureset = 'synthetic.reference'
+
+print 'Producing %s from %s' % (featureset, np_activation_data)
 
 print 'Loading list of layers...'
 layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
@@ -58,31 +61,52 @@ for layer in layers:
     activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
     activations[layer] = np.matrix(activations[layer][keep_dnn_stimuli, :])
 
+# split probes into hypothetical "brain" layers
 nprobes = s['s']['data'][0][0].shape[1]
-nprobes_per_layer = nprobes / 7
+brain_layers = np.array_split(range(nprobes), len(layers))
 
-for lid, pstart in enumerate(range(0, nprobes, nprobes_per_layer)):
+for lid, brain_layer in enumerate(brain_layers):
 
-    # decide the probe range to be assigned to the layer `lid`
-    pend = nprobes if lid == 7 else pstart + nprobes_per_layer
-    nprobes_in_this_layer = len(range(pstart, pend))
+    # first layer is generated as linear combination of DNN conv1 activations
+    """
+    if lid == 0:
+        d = activations[layers[lid]].shape[1]
+        weights = np.matrix(np.random.exponential(1.0, d)).T
+        one_probe_activity = scale(activations[layers[lid]] * weights)
+        all_probe_activity = np.tile(one_probe_activity, len(brain_layer))
+    
+    # other layers are generated as: next = non-linearity(previous), as if we emulate
+    # the brain by progressing some visual features forward in the brain
+    else:
+        previous_layer_activity = s['s']['data'][0][0][:, brain_layers[lid - 1]]
+        weights = np.matrix(np.random.exponential(1.0, previous_layer_activity.shape[1])).T
+        one_probe_activity = np.tanh(scale(previous_layer_activity * weights))
+        all_probe_activity = np.tile(one_probe_activity, len(brain_layer))
+    """
+    
+    if lid == 5 or lid == 6:
+        d = activations[layers[lid]].shape[1]
+        weights = np.matrix(np.random.exponential(1.0, d)).T
+        
+        #weights[weights < 5.0] = 0.0
+        #weights[::(lid + 1)] = 0.0
 
-    # generate the set of weights to multiply layer activations
-    # to get the responses of the probes in range (pstart, pend)
-    d = activations[layers[lid]].shape[1]
-    #weights = np.matrix(np.random.uniform(-100.0, 100.0, d)).T
-    weights = np.matrix(np.random.exponential(1.0, d)).T
-    #drop_idx = np.random.choice(range(1, d), d - 30, replace=False)
-    #weights[drop_idx] = np.matrix(np.random.uniform(-0.5, 0.5, len(drop_idx))).T
-    #weights[drop_idx] = np.matrix(np.zeros(len(drop_idx))).T
+        one_probe_activity = np.tanh(scale(activations[layers[lid]] * weights))
+        all_probe_activity = np.tile(one_probe_activity, len(brain_layer))
 
-    # generate each probe's activity, for the probes within the 
-    # [pstart, pend) range the activity will be calculated as
-    # the mulitpication of the layer activation by the weights
-    one_probe_activity = scale(activations[layers[lid]] * weights)
-    all_probe_activity = np.tile(one_probe_activity, nprobes_in_this_layer)
-    #noise = np.random.uniform(-0.5, 0.5, (319, nprobes_in_this_layer))
-    #s['s']['data'][0][0][:, pstart:pend] = all_probe_activity + noise
-    s['s']['data'][0][0][:, pstart:pend] = all_probe_activity
+        #one_probe_activity = scale(np.random.normal(-1.0, 1.0, 319))
+        #one_probe_activity[::(lid + 1)] = np.array(activations[layers[lid]][::(lid + 1)] * weights).squeeze()
+        #all_probe_activity = np.tile(np.matrix(one_probe_activity).T, len(brain_layer))
+    
+    else:
+        all_probe_activity = scale(np.random.normal(-1.0, 1.0, (319, len(brain_layer))))
+    
 
-sio.savemat('../../Data/Intracranial/Processed/synthetic/AL_25FEV13N.mat', s)
+    # add some noise
+    noise = np.random.uniform(-0.1, 0.1, all_probe_activity.shape)
+    all_probe_activity += noise
+
+    # put the generated activity into the data matrix
+    s['s']['data'][0][0][:, brain_layer] = all_probe_activity
+
+sio.savemat('../../Data/Intracranial/Processed/%s/AL_25FEV13N.mat' % featureset, s)
