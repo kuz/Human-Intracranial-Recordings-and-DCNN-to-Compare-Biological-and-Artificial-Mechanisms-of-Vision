@@ -23,7 +23,7 @@ do
 
 	# convert lmdb into numpy
 	mkdir activations/$NUMPY/$layer
-	python lmdb2numpy.py activations/$LMDB/$layer
+	python lmdb2numpy.py activations/$LMDB/$layer activations/$NUMPY/$layer
 
 done
 

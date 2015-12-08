@@ -6,15 +6,13 @@ import numpy as np
 import caffe
 import matplotlib.pyplot as plt
 
-if len(sys.argv) != 2:
-  print 'Usage:', sys.argv[0], '<lmdb_path>'
-  print 'Usage example: python lmdb2numpy.py activations/lmdb/fc7'
+if len(sys.argv) != 3:
+  print 'Usage:', sys.argv[0], '<lmdb_path>' '<numpy_path>'
+  print 'Usage example: python lmdb2numpy.py activations/lmdb/fc7 activations/numpy/fc7'
   sys.exit(2)
 
 lmdb_path = sys.argv[1]
-path_pieces = lmdb_path.split('/')
-path_pieces[-2] = 'numpy'
-numpy_path = '/'.join(path_pieces)
+numpy_path = sys.argv[2]
 
 env = lmdb.open(lmdb_path)
 env_stat = env.stat()
