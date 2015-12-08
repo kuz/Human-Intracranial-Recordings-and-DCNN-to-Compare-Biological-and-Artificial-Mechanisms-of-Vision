@@ -9,12 +9,12 @@ addpath('../lib/spectra')
 
 % load subject list
 listing = dir('../../../Data/Intracranial/Processed/LFP/*.mat');
+listing = listing(range)
 
 % for each subject
 for sfile = listing'
 
     disp(['Processing ' sfile.name ' '])
-    fprintf('\b');
     
     % load the data
     load(['../../../Data/Intracranial/Processed/LFP/' sfile.name]);
@@ -23,13 +23,10 @@ for sfile = listing'
     meangamma = zeros(length(s.stimseq), length(s.probes.probe_ids));
     
     % for each stimulus
-    %message = '';
     for stimulus = 1:length(s.stimseq)
     
         % display progress
-        fprintf(repmat('\b', 1, length(message)))
-        message = sprintf('%d / 319', stimulus);
-        fprintf(message)
+        fprintf('\r%d / 319', stimulus);
         
         % for each probe
         for probe = 1:length(s.probes.probe_ids)
@@ -76,7 +73,8 @@ for sfile = listing'
     
     % clear all subject-specific variables
     clearvars -except listing
-    
+    fprintf('\n')
+
 end
 
 
