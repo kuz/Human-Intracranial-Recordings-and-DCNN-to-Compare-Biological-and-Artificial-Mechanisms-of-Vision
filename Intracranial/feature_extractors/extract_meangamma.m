@@ -51,7 +51,7 @@ for sfile = listing'
             
             % take only part of the signal
             from = baseline_at + 51;  % 100 ms
-            till = from + 205;  % 400 ms
+            till = from + 205;  % 500 ms
             normalized = power(:, from:till);
 
             % perform normalization

@@ -3,7 +3,7 @@
 %
 
 %% Parameters
-featureset = 'maxamp';
+featureset = 'meangamma';
 
 %% List of subject for whom we have the mapping
 listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt']);
@@ -36,7 +36,7 @@ for fid = 1:length(listing)
     disp(['Processing ' num2str(fid) '/' num2str(length(listing)) ': ' subject '...'])
     
     % load the data
-    load(['../../Data/Intracranial/Processed/maxamp/' subject '.mat'])
+    load(['../../Data/Intracranial/Processed/' featureset '/' subject '.mat'])
     
     % load the mapping
     probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' ...
@@ -68,4 +68,4 @@ view([0, 0, 1]);
 drawnow;
 r = 60;
 set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 1600 300]/r);
-print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/' featureset '/ALL.png']);
+print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Mapper/Figures/' featureset '/ALL.png']);

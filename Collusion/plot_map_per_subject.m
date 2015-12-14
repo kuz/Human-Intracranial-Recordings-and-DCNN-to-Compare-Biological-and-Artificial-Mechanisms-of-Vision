@@ -3,7 +3,7 @@
 %
 
 %% Parameters
-featureset = 'maxamp';
+featureset = 'meangamma';
 
 %% List of subject for whom we have the mapping
 listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt'])
@@ -28,7 +28,7 @@ for fid = 1:length(listing)
     disp(['Processing ' num2str(fid) '/' num2str(length(listing)) ': ' subject '...'])
     
     % load the data
-    load(['../../Data/Intracranial/Processed/maxamp/' subject '.mat'])
+    load(['../../Data/Intracranial/Processed/' featureset '/' subject '.mat'])
     
     % load the mapping
     probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' ...
@@ -53,7 +53,7 @@ for fid = 1:length(listing)
 
         if probe_to_layer_map(pid) ~= -1
             plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
-                  '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 20);
+                  '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 60);
             text(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
                  num2str(pid), 'HorizontalAlignment', 'center', 'FontSize', 7);
         end
@@ -81,7 +81,7 @@ for fid = 1:length(listing)
     
     % If you want to plot all probes
     %print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/LFP/' subject '.png']);
-    print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/' featureset '/' subject '.png']);
+    print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Mapper/Figures/' featureset '/' subject '.png']);
     
     % clear workspace
     clearvars -except listing tri coord nbr normal color layercolors featureset
