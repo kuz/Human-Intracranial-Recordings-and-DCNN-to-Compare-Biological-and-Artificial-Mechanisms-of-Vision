@@ -54,15 +54,18 @@ for sfile = listing'
             till = from + 205;  % 500 ms
             normalized = power(:, from:till);
 
-            % perform normalization
-            means = mean(baseline, 2);
-            stds = std(baseline, 0, 2);
-            for f = 1:size(power, 1)
-                normalized(f, :) = (normalized(f, :) - means(f)) / stds(f);
-            end
+            %
+            % The old way: for each frequency we compute
+            % (signal - mean(baseline)) / std(baseline)
+            %
+            %means = mean(baseline, 2);
+            %stds = std(baseline, 0, 2);
+            %for f = 1:size(power, 1)
+            %    normalized(f, :) = (normalized(f, :) - means(f)) / stds(f);
+            %end
             
-            % store result
-            meangamma(stimulus, probe) = mean2(normalized);
+            % store result with simpler normalization
+            meangamma(stimulus, probe) = mean2(normalized) / mean2(baseline);
             
         end
     end
