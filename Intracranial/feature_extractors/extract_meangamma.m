@@ -46,7 +46,7 @@ for sfile = listing'
             [power, faxis, times, period] = waveletspectrogram(signal', 512, 'freqlimits', [70 150]);
 
             % take baseline for later normalization
-            baseline_at = 256;
+            baseline_at = 256; %TODO take to -100
             baseline = power(:, 1:baseline_at);
             
             % take only part of the signal
