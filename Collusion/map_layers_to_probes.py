@@ -50,11 +50,6 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         print '%s: %s to probe %d with alpha %f gave %.4f' % (subject_name, layer, pid, a, r)
     """
 
-    # apply PCA
-    #pca = PCA(n_components=150)
-    #train_layer_activity = pca.fit_transform(train_layer_activity)
-    #assign_layer_activity = pca.transform(assign_layer_activity)
-
     # parameters
     n_runs = 7
     n_cv = 10
@@ -145,19 +140,6 @@ for layer in layers:
         sid_dnn = dnn_stimuli.index(stimulus)
         layer_activity[layer][sid_brain, :] = activations[layer][sid_dnn, :]
         probe_responses = subject['data']
-
-# apply PCA to layer activations
-"""
-npcs = 150
-layer_activity_pca = {}
-for layer in layers:
-    print 'Computing PCA for layer %s' % layer
-    pca = PCA(n_components=npcs)
-    layer_activity_pca[layer] = np.zeros((nstims, npcs))
-    layer_activity_pca[layer][train_idx, :] = pca.fit_transform(layer_activity[layer][train_idx, :])
-    layer_activity_pca[layer][assign_idx, :] = pca.transform(layer_activity[layer][assign_idx, :])
-layer_activity = layer_activity_pca
-"""
 
 # grid of (subject, layer, pribe) triples to compute in parallel
 parallel_grid = []
