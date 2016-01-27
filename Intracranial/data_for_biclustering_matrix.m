@@ -4,7 +4,7 @@
 
 
 %% Parameters
-featureset = 'meangamma';
+featureset = 'meandelta';
 
 
 %% List of subject for whom we have the mapping
