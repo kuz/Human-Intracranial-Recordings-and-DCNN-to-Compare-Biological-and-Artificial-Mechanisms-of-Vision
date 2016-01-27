@@ -11,13 +11,13 @@ talareich_level = 3;
 
 
 %% List of subject for whom we have the mapping
-listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt'])
+listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt']);
 
 
 %% Compute stats
 area_id_map = containers.Map();
 area_id_map_reverse = {};
-stats = {};    
+stats = {};
 
 % for each subject
 for fid = 1:length(listing)
@@ -82,7 +82,7 @@ for r = 1:length(area_id_map)
         stats(r, l) = stats_counts(r, l) / sum(stats_counts(r, 1:9));
     end
 end
-
+stats(isnan(stats)) = 0;
 
 %% Plot heatmap
 imagesc(stats(:, 1:8));
@@ -93,8 +93,18 @@ set(gca,'Position',[0.35 0.05 0.4 0.9])
 % total counts
 sums = sum(stats_counts, 2);
 for i = 1:length(sums)
-    text(8.7, i, num2str(sums(i)))
+    text(8.7, i, [num2str(sums(i))])
 end
+
+% numbers on top of imagesc
+counts = stats_counts(:, 1:8);
+textStrings = num2str(counts(:), '%d');
+textStrings = strtrim(cellstr(textStrings));
+[x,y] = meshgrid(1:8, 1:42);
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center');
+%midValue = mean(get(gca,'CLim'));
+%textColors = repmat(counts(:) > midValue,1,3);
+%set(hStrings,{'Color'},num2cell(textColors,2));
 
 % colorbar
 pos=get(gca,'pos');
