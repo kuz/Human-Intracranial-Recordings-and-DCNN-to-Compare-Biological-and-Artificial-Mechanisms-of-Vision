@@ -83,7 +83,8 @@ for r = 1:length(area_id_map)
     end
 end
 
-% plot heatmap
+
+%% Plot heatmap
 imagesc(stats(:, 1:8));
 set(gca, 'XTick', 1:8, 'YTick', 1:length(area_id_map_reverse), 'YTickLabel', area_id_map_reverse)
 xlabel('Layer')

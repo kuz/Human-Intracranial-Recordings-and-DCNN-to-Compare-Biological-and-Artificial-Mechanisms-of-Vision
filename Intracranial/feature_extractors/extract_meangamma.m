@@ -52,7 +52,7 @@ for sfile = listing'
             % take only part of the signal
             from = baseline_at + 51;  % 100 ms
             till = from + 205;  % 500 ms
-            normalized = power(:, from:till);
+            fqsignal = power(:, from:till);
 
             %
             % The old way: for each frequency we compute
@@ -65,7 +65,7 @@ for sfile = listing'
             %end
             
             % store result with simpler normalization
-            meangamma(stimulus, probe) = mean2(normalized) / mean2(baseline);
+            meangamma(stimulus, probe) = mean2(fqsignal) / mean2(baseline);
             
         end
     end
