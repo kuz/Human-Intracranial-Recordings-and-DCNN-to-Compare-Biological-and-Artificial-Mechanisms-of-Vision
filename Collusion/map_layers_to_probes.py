@@ -41,6 +41,7 @@ print "Working with %d CPUs" % ncores
 def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_responses_all):
 
     # parameter search
+    # http://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html
     """
     alphas = [0.00001, 0.001, 0.1, 1, 10, 100]
     for a in alphas:
@@ -150,8 +151,8 @@ for layer in layers:
 # for each (layer, probe) combination train a linear model to predict the probe response from the layer activations
 start = time.time()
 results = Parallel(n_jobs=ncores, backend="threading")(delayed(predict_from_layer)(subject['name'], layer, pid,
-                                                             layer_activity[layer], probe_responses[:, pid])
-                                  for (layer, pid) in parallel_grid)
+                                                               layer_activity[layer], probe_responses[:, pid])
+                                                       for (layer, pid) in parallel_grid)
 print 'Training the models took', time.time() - start
 
 # aggregate results and store to files

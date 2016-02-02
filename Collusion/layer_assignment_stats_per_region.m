@@ -6,7 +6,7 @@ addpath('../Intracranial/lib/mni2name')
 
 
 %% Parameters
-featureset = 'meangamma';
+featureset = 'meangamma.onebin';
 talareich_level = 3;
 
 
