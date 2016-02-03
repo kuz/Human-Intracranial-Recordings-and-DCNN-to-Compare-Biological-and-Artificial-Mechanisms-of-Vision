@@ -30,7 +30,7 @@ for sfile = listing'
         for probe = 1:length(s.probes.probe_ids)
    
             % take the signal
-            power = gamma(stimulus, probe, :, :);
+            power = s.data(stimulus, probe, :, :);
             stimulus_at = 256;            
 
             % take baseline for later normalization
