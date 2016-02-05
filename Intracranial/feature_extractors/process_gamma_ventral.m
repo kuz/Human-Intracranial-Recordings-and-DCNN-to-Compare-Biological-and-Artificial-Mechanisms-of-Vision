@@ -30,7 +30,7 @@ for sfile = listing'
         for probe = 1:length(s.probes.probe_ids)
    
             % take the signal
-            power = s.data(stimulus, probe, :, :);
+            power = squeeze(s.data(stimulus, probe, :, :));
             stimulus_at = 256;            
 
             % take baseline for later normalization
@@ -44,13 +44,24 @@ for sfile = listing'
             
             % normalization A: whole band average / whole band baseline average
             meangamma(stimulus, probe) = mean2(fqsignal) / mean2(baseline);
-            
+
+            % normalization B: 10 hz bins, divide, average
+            binsize = 10;
+            ratios = [];
+            for lhz = 1:binsize:(81 - binsize)
+                hhz = lhz + binsize - 1;
+                binbaseline = baseline(lhz:hhz, :);
+                binsignal = fqsignal(lhz:hhz, :);
+                ratios = [ratios, mean2(binsignal) / mean2(binbaseline)];
+            end
+            meangamma(stimulus, probe) = max(ratios);
+
         end
     end
     
     % store extracted features
     s.data = meangamma;
-    save(['../../../Data/Intracranial/Processed/meangamma_ventral_w500_onebin/' sfile.name], 's');
+    save(['../../../Data/Intracranial/Processed/maxgamma_ventral_w500_10hz/' sfile.name], 's');
     
     % clear all subject-specific variables
     clearvars -except listing
