@@ -19,19 +19,23 @@ import argparse
 
 
 # read in command line arguments
-parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
-parser.add_argument('-i', '--sid', dest='sid', type=int, required=True, help='Subject ID')
-parser.add_argument('-a', '--activations', dest='np_activation_data', type=str, required=True, help='Directory with DNN activations (DNN/activations/?)')
-parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory with brain features (Processed/?)')
-args = parser.parse_args()
-sid = int(args.sid)
-np_activation_data = str(args.np_activation_data)
-featureset = str(args.featureset)
+#parser = argparse.ArgumentParser(description='Train all linear models for a given subject.')
+#parser.add_argument('-i', '--sid', dest='sid', type=int, required=True, help='Subject ID')
+#parser.add_argument('-a', '--activations', dest='np_activation_data', type=str, required=True, help='Directory with DNN activations (DNN/activations/?)')
+#parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory with brain features (Processed/?)')
+#args = parser.parse_args()
+#sid = int(args.sid)
+#np_activation_data = str(args.np_activation_data)
+#featureset = str(args.featureset)
+
+sid = 53
+np_activation_data = 'numpy.reference'
+featureset = 'meangamma_ventral_noscram'
 
 # parameters
 print 'Mapping subject %d represented with "%s" to %s DNN activations' % (sid, featureset, np_activation_data)
 #ncores = multiprocessing.cpu_count()
-ncores = 12
+ncores = 6
 print "Working with %d CPUs" % ncores
 
 
@@ -40,21 +44,24 @@ print "Working with %d CPUs" % ncores
 # of stimuli
 def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_responses_all):
 
-    # parameter search
-    # http://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html
-    """
-    alphas = [0.00001, 0.001, 0.1, 1, 10, 100]
-    for a in alphas:
-        clf = linear_model.Lasso(alpha=a, max_iter=100)
-        predicted = cross_validation.cross_val_predict(clf, train_layer_activity, train_probe_responses, cv=5)
-        r, pval = pearsonr(train_probe_responses, predicted)
-        print '%s: %s to probe %d with alpha %f gave %.4f' % (subject_name, layer, pid, a, r)
-    """
-
     # parameters
     n_runs = 7
     n_cv = 10
     n_iter = 50
+
+    # parameter search
+    # http://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html
+    alphas = [0.001, 0.01, 0.1, 0.3, 0.5, 0.7, 1.0, 10.0]
+    max_r = -1.0
+    best_alpha = 1.0
+    for a in alphas:
+        clf = linear_model.Lasso(alpha=a, max_iter=n_iter)
+        predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv)
+        r, pval = pearsonr(probe_responses_all, predicted)
+        #print '%s: %s to probe %d with alpha %f gave %.4f' % (subject_name, layer, pid, a, r)
+        if r >= max_r:
+            best_alpha = a
+            max_r = r
 
     # repeat predictability estimation [n_runs] times
     r_scores = np.zeros(n_runs)
@@ -65,12 +72,28 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         layer_activity_all = layer_activity_all[shuffle_idx]
         probe_responses_all = probe_responses_all[shuffle_idx]
 
+        # evaluate performance on the test set
+        clf = linear_model.Lasso(alpha=best_alpha, max_iter=n_iter)
+        clf.fit(layer_activity_all, probe_responses_all)
+        score_train = clf.score(layer_activity_all, probe_responses_all)
+        predicted_train = clf.predict(layer_activity_all)
+        r_train, pval = pearsonr(probe_responses_all, predicted_train)
+
         # predict piecewise all of the data using CV
-        clf = linear_model.Lasso(alpha = 0.1, max_iter=n_iter)
-        predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv)
+        clf = linear_model.Lasso(alpha=best_alpha, max_iter=n_iter)
+        predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv) 
+        score_cv = cross_validation.cross_val_score(clf, layer_activity_all, probe_responses_all, cv=n_cv)
 
         # store the correlation coefficient
         r, pval = pearsonr(probe_responses_all, predicted)
+
+        # print summary
+        #print '--------------------------------------------------------'
+        #print 'R^2 on TRAIN = ', score_train
+        #print 'R^2 on CV    = ', np.mean(score_cv)
+        #print 'Pearson r on TRAIN = ', r_train
+        #print 'Pearson r on CV    = ', r
+        #print '--------------------------------------------------------'
 
         # drop not significant results
         if pval > 0.001 or r < 0.0:
@@ -87,7 +110,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     # display progress
     print 'Fitted  %s: %s to probe %d -- %f (%s)' % (subject_name, layer, pid, final_score, r_scores)
 
-    return (layer, pid, r)
+    return (layer, pid, final_score)
 
 
 # prepare lists of probe coordinates for each layer
