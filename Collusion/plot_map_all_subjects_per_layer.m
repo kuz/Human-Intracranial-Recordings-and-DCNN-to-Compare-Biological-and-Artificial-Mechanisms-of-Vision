@@ -4,7 +4,7 @@
 %
 
 %% Parameters
-featureset = 'meangamma';
+featureset = 'meangamma_ventral_w250_10hz';
 
 %% List of subject for whom we have the mapping
 listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt'])
@@ -47,7 +47,7 @@ for lid = 1:8
                                    featureset '/' listing(fid).name]);
 
         % plot each prob in corresponding color
-        for pid = 1:length(s.probes.mni)
+        for pid = 1:size(s.probes.mni, 1)
             if probe_to_layer_map(pid) ~= -1
                 if probe_to_layer_map(pid) == lid
                     plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
@@ -74,6 +74,6 @@ for lid = 1:8
     drawnow;
     r = 70;
     set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 1600 300]/r);
-    print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Mapper/Figures/' featureset '/ALL-layer-' num2str(lid) '.png']);
+    print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Figures/' featureset '/ALL-layer-' num2str(lid) '.png']);
     
 end

@@ -3,7 +3,7 @@
 %
 
 %% Parameters
-featureset = 'meangamma';
+featureset = 'meangamma_ventral_w250_10hz';
 
 %% List of subject for whom we have the mapping
 listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt'])
@@ -43,7 +43,7 @@ for fid = 1:length(listing)
     hold on;
     
     % plot each prob in corresponding color
-    for pid = 1:length(s.probes.mni)
+    for pid = 1:size(s.probes.mni, 1)
         
         % If you want to plot all probes
         %plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
@@ -81,7 +81,7 @@ for fid = 1:length(listing)
     
     % If you want to plot all probes
     %print(gcf, '-dpng', sprintf('-r%d', r), ['Figures/LFP/' subject '.png']);
-    print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Mapper/Figures/' featureset '/' subject '.png']);
+    print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Figures/' featureset '/' subject '.png']);
     
     % clear workspace
     clearvars -except listing tri coord nbr normal color layercolors featureset

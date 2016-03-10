@@ -6,7 +6,7 @@ addpath('../Intracranial/lib/mni2name')
 
 
 %% Parameters
-featureset = 'meangamma.onebin';
+featureset = 'meangamma_ventral_noscram';
 talareich_level = 5;
 
 
@@ -88,7 +88,7 @@ stats_counts = stats;
 %% for each region compute "assigned to layer L / total in this region"
 for r = 1:length(area_id_map)
     for l = 1:8
-        stats(r, l) = stats_counts(r, l) / sum(stats_counts(r, 1:9));
+        stats(r, l) = stats_counts(r, l) / sum(stats_counts(r, 1:8));
     end
 end
 stats(isnan(stats)) = 0;

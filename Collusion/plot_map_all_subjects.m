@@ -3,7 +3,7 @@
 %
 
 %% Parameters
-featureset = 'meangamma';
+featureset = 'meangamma_ventral_w250_10hz';
 
 %% List of subject for whom we have the mapping
 listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt']);
@@ -43,7 +43,7 @@ for fid = 1:length(listing)
                               featureset '/' listing(fid).name]);
     
     % plot each prob in corresponding color
-    for pid = 1:length(s.probes.mni)
+    for pid = 1:size(s.probes.mni, 1)
         if probe_to_layer_map(pid) ~= -1
             plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), ...
                   '.', 'color', layercolors(probe_to_layer_map(pid), :), 'MarkerSize', 20);
@@ -66,6 +66,6 @@ view([0, 0, 1]);
        
 % save the figure
 drawnow;
-r = 60;
+r = 70;
 set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 1600 300]/r);
-print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Mapper/Figures/' featureset '/ALL.png']);
+print(gcf, '-dpng', sprintf('-r%d', r), ['../../Outcome/Figures/' featureset '/ALL.png']);
