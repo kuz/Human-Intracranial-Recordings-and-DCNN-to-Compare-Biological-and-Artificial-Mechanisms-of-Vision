@@ -48,7 +48,7 @@ for fid = 1:length(listing)
     probe_to_layer_map(probe_to_layer_map == -1) = 9;
     
     % check
-    if sum(probe_to_layer_map) == 0
+    if sum(sum(probe_to_layer_map)) == 0
         disp('  Probes not assigned, skipping...')
         continue
     end
@@ -65,11 +65,13 @@ for fid = 1:length(listing)
         area_id = area_id_map(areas{i, talareich_level});
         
         % update counter
-        if area_id > size(stats, 1) || probe_to_layer_map(i) > size(stats, 2)
-            stats{area_id, probe_to_layer_map(i)} = 0;
-            stats(cellfun(@isempty, stats)) = {0};
+        for j = 1:size(probe_to_layer_map, 2)
+            if area_id > size(stats, 1) || probe_to_layer_map(i, j) > size(stats, 2)
+                stats{area_id, probe_to_layer_map(i, j)} = 0;
+                stats(cellfun(@isempty, stats)) = {0};
+            end
+            stats{area_id, probe_to_layer_map(i, j)} = stats{area_id, probe_to_layer_map(i, j)} + 1;
         end
-        stats{area_id, probe_to_layer_map(i)} = stats{area_id, probe_to_layer_map(i)} + 1;
         
     end
     
