@@ -6,12 +6,13 @@ addpath('../Intracranial/lib/mni2name')
 
 
 %% Parameters
+mapperset = 'meangamma_ventral_noscram.pca';
 featureset = 'meangamma_ventral_noscram';
 talareich_level = 5;
 
 
 %% List of subject for whom we have the mapping
-listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/*.txt']);
+listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' mapperset '/*.txt']);
 
 
 %% Compute stats
@@ -34,7 +35,7 @@ for fid = 1:length(listing)
     subject = name;
     
     % display progress
-    disp(['Processing ' num2str(fid) '/' num2str(length(listing)) ': ' subject '...'])
+    %disp(['Processing ' num2str(fid) '/' num2str(length(listing)) ': ' subject '...'])
     
     % load the data
     load(['../../Data/Intracranial/Processed/' featureset '/' subject '.mat'])
@@ -44,12 +45,12 @@ for fid = 1:length(listing)
     [~, areas] = mni2name(s.probes.mni);
     
     % load the mapping
-    probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' featureset '/' listing(fid).name]);
+    probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' mapperset '/' listing(fid).name]);
     probe_to_layer_map(probe_to_layer_map == -1) = 9;
     
     % check
-    if sum(sum(probe_to_layer_map)) == 0
-        disp('  Probes not assigned, skipping...')
+    if sum(probe_to_layer_map) == 0
+        %disp('  Probes not assigned, skipping...')
         continue
     end
     
@@ -65,19 +66,18 @@ for fid = 1:length(listing)
         area_id = area_id_map(areas{i, talareich_level});
         
         % update counter
-        for j = 1:size(probe_to_layer_map, 2)
-            if area_id > size(stats, 1) || probe_to_layer_map(i, j) > size(stats, 2)
-                stats{area_id, probe_to_layer_map(i, j)} = 0;
-                stats(cellfun(@isempty, stats)) = {0};
-            end
-            stats{area_id, probe_to_layer_map(i, j)} = stats{area_id, probe_to_layer_map(i, j)} + 1;
+        if area_id > size(stats, 1) || probe_to_layer_map(i) > size(stats, 2)
+            stats{area_id, probe_to_layer_map(i)} = 0;
+            stats(cellfun(@isempty, stats)) = {0};
         end
+        stats{area_id, probe_to_layer_map(i)} = stats{area_id, probe_to_layer_map(i)} + 1;
+        disp([areas_of_interest{area_id} ',' num2str(probe_to_layer_map(i)) ',' name])
         
     end
     
     % clear workspace
     clearvars -except listing talareich_level featureset area_id_map area_id_map_reverse ...
-                      stats areas_of_interest
+                      stats areas_of_interest mapperset
     
 end
 
