@@ -9,8 +9,8 @@ if er + en + ef + eb ~= 4
 end
 
 % parameters
-indata = 'LFP';
-outdata = ['mean' bandname];
+indata = 'biploar_ventral';
+outdata = ['mean' bandname '_biploar_ventral'];
 
 % load third party code
 addpath('../lib/spectra')
