@@ -3,11 +3,15 @@
 % over high gamma (70-150 Hz) band for each (subject, stimulus, probe) triple
 %
 
+% parameters
+indata = 'LFP_ventral_noscram'
+outdata = 'gamma_ventral_noscram'
+
 % load third party code
 addpath('../lib/spectra')
 
 % load subject list
-listing = dir('../../../Data/Intracranial/Processed/LFP/*.mat');
+listing = dir(['../../../Data/Intracranial/Processed/' indata '/*.mat']);
 listing = listing(range)
 
 % for each subject
@@ -16,16 +20,17 @@ for sfile = listing'
     disp(['Processing ' sfile.name ' '])
     
     % load the data
-    load(['../../../Data/Intracranial/Processed/LFP/' sfile.name]);
+    load(['../../../Data/Intracranial/Processed/' indata '/' sfile.name]);
     
     % output data structure
-    meangamma = zeros(length(s.stimseq), length(s.probes.probe_ids));
+    gamma = single(zeros(length(s.stimseq), length(s.probes.probe_ids), 81, 768));
     
     % for each stimulus
+    nstim = length(s.stimseq);
     for stimulus = 1:length(s.stimseq)
     
         % display progress
-        fprintf('\r%d / 319', stimulus);
+        fprintf('\r%d / %d', stimulus, nstim);
         
         % for each probe
         for probe = 1:length(s.probes.probe_ids)
@@ -43,38 +48,17 @@ for sfile = listing'
             
             % wavelet transform
             [power, faxis, times, period] = waveletspectrogram(signal', 512, 'freqlimits', [70 150]);
-
-            % take baseline for later normalization
-            baseline_at = 256; %TODO take to -100
-            baseline = power(:, 1:baseline_at);
-            
-            % take only part of the signal
-            from = baseline_at + 51;  % 100 ms
-            till = from + 205;  % 500 ms
-            fqsignal = power(:, from:till);
-
-            %
-            % The old way: for each frequency we compute
-            % (signal - mean(baseline)) / std(baseline)
-            %
-            %means = mean(baseline, 2);
-            %stds = std(baseline, 0, 2);
-            %for f = 1:size(power, 1)
-            %    normalized(f, :) = (normalized(f, :) - means(f)) / stds(f);
-            %end
-            
-            % store result with simpler normalization
-            meangamma(stimulus, probe) = mean2(fqsignal) / mean2(baseline);
+            gamma(stimulus, probe, :, :) = power;
             
         end
     end
     
     % store extracted features
-    s.data = meangamma;
-    save(['../../../Data/Intracranial/Processed/meangamma/' sfile.name], 's');
+    s.data = gamma;
+    save(['../../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's', '-v7.3');
     
     % clear all subject-specific variables
-    clearvars -except listing
+    clearvars -except listing indata outdata
     fprintf('\n')
 
 end

@@ -8,7 +8,7 @@ addpath('lib/mni2name')
 
 
 %% Parameters
-featureset = 'meangamma_ventral_w250_10hz';
+featureset = 'meangamma';
 talareich_level = 5;
 
 
