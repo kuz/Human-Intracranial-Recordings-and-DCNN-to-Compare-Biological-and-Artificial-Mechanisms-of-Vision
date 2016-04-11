@@ -11,7 +11,7 @@ import numpy as np
 import scipy.io as sio
 from sklearn import linear_model
 from sklearn import cross_validation
-from sklearn.decomposition import PCA, FastICA
+from sklearn.decomposition import PCA, FastICA, KernelPCA
 from scipy.stats import pearsonr
 import multiprocessing
 from joblib import Parallel, delayed
@@ -96,14 +96,14 @@ n_cv = 10
 n_iter = 50
 
 # PCA
-#pca = PCA(n_components=100)
-#layer_activity_all = pca.fit_transform(layer_activity_all)
+pca = KernelPCA(n_components=100, kernel='poly')
+layer_activity_all = pca.fit_transform(layer_activity_all)
 
 # Randomized PCA
 
 # ICA
-ica = FastICA(n_components=100)
-layer_activity_all = ica.fit_transform(layer_activity_all)
+#ica = FastICA(n_components=100)
+#layer_activity_all = ica.fit_transform(layer_activity_all)
 
 # parameter search
 # http://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html
