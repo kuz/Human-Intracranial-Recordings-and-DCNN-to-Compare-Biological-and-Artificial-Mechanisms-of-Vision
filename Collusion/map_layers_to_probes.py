@@ -84,17 +84,9 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         layer_activity_all = layer_activity_all[shuffle_idx]
         probe_responses_all = probe_responses_all[shuffle_idx]
 
-        # evaluate performance on the train set
-        #clf = linear_model.Ridge(alpha=best_alpha, max_iter=n_iter)
-        #clf.fit(layer_activity_all, probe_responses_all)
-        #score_train = clf.score(layer_activity_all, probe_responses_all)
-        #predicted_train = clf.predict(layer_activity_all)
-        #r_train, pval = pearsonr(probe_responses_all, predicted_train)
-
         # predict piecewise all of the data using CV
         clf = linear_model.Ridge(alpha=best_alpha, max_iter=n_iter)
         predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv) 
-        #score_cv = cross_validation.cross_val_score(clf, layer_activity_all, probe_responses_all, cv=n_cv)
 
         # store the correlation coefficient
         r, pval = pearsonr(probe_responses_all, predicted)
@@ -103,7 +95,12 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         if pval > 0.001 or r < 0.0:
             r = 0.0
         r_scores[run] = r
-
+    
+    """ all-7 version
+    print 'Fitting  %s: %s to probe %d -- %s' % (subject_name, layer, pid, r_scores)
+    return (layer, pid, r_scores)
+    """
+    
     # to consider a probe to be a significant match we request that at least half
     # of the reshuflings have indicated is as such
     if np.sum(r_scores > 0.0) >= n_runs / 2.0:
@@ -180,6 +177,28 @@ start = time.time()
 results = Parallel(n_jobs=ncores, backend="threading")(delayed(predict_from_layer)(subject['name'], layer, pid,
                                                                layer_activity[layer], probe_responses[:, pid])
                                                        for (layer, pid) in parallel_grid)
+
+""" all-7 version
+print 'Training the models took', time.time() - start
+
+# aggregate results and store to files
+print 'Storing mapping for %s...' % subject['name']
+
+probe_to_layer_map = [[] for i in range(nprobes)]
+for record in results:
+    layerid = layers.index(record[0]) + 1
+    for i in range(len(np.where(record[2] > 0.0)[0])):
+        probe_to_layer_map[record[1]].append(layerid)
+
+# replace layer ID with `-1` if no significant assignments were found
+if nprobes > 0:
+    mlen = len(sorted(probe_to_layer_map, key=len, reverse=True)[0])
+    probe_to_layer_map = np.array([xi + [-1] * (mlen - len(xi)) for xi in probe_to_layer_map])
+
+# store probe to layer mapping for the subject
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s/%s.txt' % (featureset, subject['name']), probe_to_layer_map, fmt='%i')
+"""
+
 print 'Training the models took', time.time() - start
 
 # aggregate results and store to files
@@ -209,7 +228,6 @@ for pid in range(nprobes):
 
 # store probe to layer mapping for the subject
 np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s/%s.txt' % (featureset, subject['name']), probe_to_layer_map, fmt='%i')
-
     
 
 
