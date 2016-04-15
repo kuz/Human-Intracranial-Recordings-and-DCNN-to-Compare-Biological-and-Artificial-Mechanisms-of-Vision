@@ -1,6 +1,6 @@
 % parameters
-indata = 'LFP_ventral';
-outdata = 'bipolar_ventral';
+indata = 'LFP_noscram';
+outdata = 'LFP_bipolar_noscram';
 
 % load subject list
 listing = dir(['../../Data/Intracranial/Processed/' indata '/*.mat']);
