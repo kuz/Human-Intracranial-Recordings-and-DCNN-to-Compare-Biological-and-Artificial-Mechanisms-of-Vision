@@ -6,20 +6,22 @@
 addpath('../lib/mni2name')
 
 % parameters
+indata = 'LFP_bipolar_noscram';
+outdata = 'LFP_bipolar_noscram_ventral';
 talareich_level = 5;
 areas_of_interest = {'brodmann area 17', 'brodmann area 18', 'brodmann area 19', ...
                      'brodmann area 37', 'brodmann area 20', 'brodmann area 38', ...
                      'brodmann area 28', 'brodmann area 27', 'brodmann area 35'};
 
 % load subject list
-listing = dir('../../../Data/Intracranial/Processed/LFP/*.mat');
+listing = dir(['../../../Data/Intracranial/Processed/' indata '/*.mat']);
 
 % process file-by-file
 for sfile = listing'
     disp(['Processing ' sfile.name ' '])
     
     % load the data
-    load(['../../../Data/Intracranial/Processed/LFP/' sfile.name]);
+    load(['../../../Data/Intracranial/Processed/' indata '/' sfile.name]);
     
     s.probes.mni(isnan(s.probes.mni)) = 0;
     [~, areas] = mni2name(s.probes.mni);
@@ -41,9 +43,9 @@ for sfile = listing'
     s.data = s.data(:, keepidx, :);
     
     % store the data
-    save(['../../../Data/Intracranial/Processed/LFP_ventral/' sfile.name], 's');
+    save(['../../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
     
     % drop all variables which are relevant to this subject
-    clearvars -except listing talareich_level areas_of_interest
+    clearvars -except listing talareich_level areas_of_interest indata outdata
     
 end

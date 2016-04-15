@@ -1,10 +1,6 @@
-%
-% Take only electrodes along ventral stream
-%
-
 % parameters
-indata = 'meangamma_ventral_w250_10hz';
-outdata = 'meangamma_ventral_noscram';
+indata = 'LFP';
+outdata = 'LFP_noscram';
 
 % load subject list
 listing = dir(['../../../Data/Intracranial/Processed/' indata '/*.mat']);
