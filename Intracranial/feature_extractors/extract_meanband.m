@@ -9,8 +9,8 @@ if er + en + ef + eb ~= 4
 end
 
 % parameters
-indata = 'LFP_bipolar_noscram_ventral';
-outdata = ['mean' bandname '_biploar_noscram_ventral'];
+indata = 'LFP_bipolar_noscram_ventral_artif';
+outdata = ['mean' bandname '_biploar_noscram_ventral_artif'];
 
 % load third party code
 addpath('../lib/spectra')
@@ -42,6 +42,16 @@ for sfile = listing'
     
             % take the signal
             signal = detrend(squeeze(s.data(stimulus, probe, :)));
+            
+            % to do artifact rejection we have dropped some number of
+            % images from each of the probes, now each proble has varying
+            % number of "trials" (images), to keep the data in matrix
+            % format we inroduce a "poison pill" value of -123456 -- the
+            % images with this values as a response should be excluded
+            % from further analysis
+            if sum(signal) == 0.0
+                meanband(stimulus, probe) = -123456;
+            end
             
             % filter the signal
             for f = [50, 100, 150, 200, 250]
