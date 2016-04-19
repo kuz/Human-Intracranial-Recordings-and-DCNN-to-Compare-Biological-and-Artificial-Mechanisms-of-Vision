@@ -51,6 +51,7 @@ for sfile = listing'
             % from further analysis
             if sum(signal) == 0.0
                 meanband(stimulus, probe) = -123456;
+                continue
             end
             
             % filter the signal
