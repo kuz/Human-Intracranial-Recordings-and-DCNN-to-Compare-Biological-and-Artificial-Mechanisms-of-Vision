@@ -60,7 +60,7 @@ for sfile = listing'
     %end
     
     % store the data
-    save(['../../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
+    save(['../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
     
     % drop all variables which are relevant to this subject
     clearvars -except listing indata outdata affected_trials total_trials drop_probes total_probes threshold
