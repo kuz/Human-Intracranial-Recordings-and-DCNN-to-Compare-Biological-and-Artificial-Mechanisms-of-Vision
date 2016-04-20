@@ -51,6 +51,14 @@ def scan_alpha(alphas, n_iter, layer_activity_all, probe_responses_all, n_cv):
 # of stimuli
 def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_responses_all):
 
+    # to do artifact rejection we have dropped some number of images from each of the probes
+    # now each proble has varying number of "trials" (images), to keep the data in matrix
+    # format we inroduce a "poison pill" value of -123456 -- the images with this values as
+    # a response should be excluded from further analysis
+    keep_stim = probe_responses_all != -123456
+    layer_activity_all = layer_activity_all[keep_stim]
+    probe_responses_all = probe_responses_all[keep_stim]
+
     # parameters
     n_runs = 7
     n_cv = 10
