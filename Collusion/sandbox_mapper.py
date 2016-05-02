@@ -96,10 +96,19 @@ n_cv = 10
 n_iter = 50
 
 
-"""
 # PCA
-pca = KernelPCA(n_components=100, kernel='poly')
-layer_activity_all = pca.fit_transform(layer_activity_all)
+#pca = KernelPCA(n_components=100, kernel='poly')
+#layer_activity_all = pca.fit_transform(layer_activity_all)
+
+# sPCA
+s = layer_activity_all.T * np.matrix(probe_responses_all).T
+n = np.sqrt(np.sum(layer_activity_all**2, axis=0)).T
+sn = np.ravel(s / np.matrix(n).T)
+sn = np.nan_to_num(sn)
+keep_features = np.where(sn > np.mean(sn[sn > 0.0]))[0]
+layer_activity_all_th = layer_activity_all[:, keep_features]
+pca = PCA(n_components=100)
+layer_activity_all = pca.fit_transform(layer_activity_all_th)
 
 # Randomized PCA
 
@@ -164,7 +173,6 @@ for run in range(n_runs):
     if pval > 0.001 or r < 0.0:
         r = 0.0
     r_scores[run] = r
-"""
 
 """
 # to consider a probe to be a significant match we request that at least half
