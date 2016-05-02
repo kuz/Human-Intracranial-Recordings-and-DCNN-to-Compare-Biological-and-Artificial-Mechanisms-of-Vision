@@ -70,14 +70,14 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     #layer_activity_all = pca.fit_transform(layer_activity_all)
 
     # sPCA
-    s = layer_activity_all.T * np.matrix(probe_responses_all).T
-    n = np.sqrt(np.sum(layer_activity_all**2, axis=0)).T
-    sn = np.ravel(s / np.matrix(n).T)
-    sn = np.nan_to_num(sn)
-    keep_features = np.where(sn > np.mean(sn[sn > 0.0]))[0]
-    layer_activity_all_th = layer_activity_all[:, keep_features]
-    pca = PCA(n_components=100)
-    layer_activity_all = pca.fit_transform(layer_activity_all_th)
+    #s = layer_activity_all.T * np.matrix(probe_responses_all).T
+    #n = np.sqrt(np.sum(layer_activity_all**2, axis=0)).T
+    #sn = np.ravel(s / np.matrix(n).T)
+    #sn = np.nan_to_num(sn)
+    #keep_features = np.where(sn > np.mean(sn[sn > 0.0]))[0]
+    #layer_activity_all_th = layer_activity_all[:, keep_features]
+    #pca = PCA(n_components=100)
+    #layer_activity_all = pca.fit_transform(layer_activity_all_th)
 
     # parameter search
     # http://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html
