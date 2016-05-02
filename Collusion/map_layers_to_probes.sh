@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ~/Python/bin/activate
-FEATURESET=meangamma_biploar_noscram_ventral
+FEATURESET=meangamma_biploar_noscram_ventral_artif
 nfiles=$(ls -l ../../Data/Intracranial/Processed/$FEATURESET/*.mat | wc -l)
 for i in $(seq 1 $nfiles)
 do

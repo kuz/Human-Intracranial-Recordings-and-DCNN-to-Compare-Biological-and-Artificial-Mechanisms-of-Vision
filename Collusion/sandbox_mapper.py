@@ -95,6 +95,8 @@ n_runs = 7
 n_cv = 10
 n_iter = 50
 
+
+"""
 # PCA
 pca = KernelPCA(n_components=100, kernel='poly')
 layer_activity_all = pca.fit_transform(layer_activity_all)
@@ -162,7 +164,7 @@ for run in range(n_runs):
     if pval > 0.001 or r < 0.0:
         r = 0.0
     r_scores[run] = r
-
+"""
 
 """
 # to consider a probe to be a significant match we request that at least half
