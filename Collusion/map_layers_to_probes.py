@@ -66,6 +66,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
 
     # PCA
     pca = PCA(n_components=100)
+    layer_activity_all += np.random.rand(layer_activity_all.shape[0], layer_activity_all.shape[1]) * 1e-9
     layer_activity_all = pca.fit_transform(layer_activity_all)
 
     # parameter search
@@ -100,7 +101,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         r, pval = pearsonr(probe_responses_all, predicted)
 
         # drop not significant results
-        if pval > 0.001 or r < 0.0:
+        if pval > 0.01 or r < 0.0:
             r = 0.0
         r_scores[run] = r
     
