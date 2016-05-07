@@ -1,10 +1,3 @@
-"""
-
-Given intracranial recordings of a subject attempt to predict each probe's activity from activations of layers of DNN.
-For each probe we find the layer which is the best at precting the probe's activity.
-
-"""
-
 import os
 import time
 import numpy as np
@@ -29,10 +22,8 @@ np_activation_data = str(args.np_activation_data)
 featureset = str(args.featureset)
 
 # parameters
-print 'Mapping subject %d represented with "%s" to %s DNN activations' % (sid, featureset, np_activation_data)
 #ncores = multiprocessing.cpu_count()
 ncores = 6
-print "Working with %d CPUs" % ncores
 
 def scan_alpha(alphas, n_iter, layer_activity_all, probe_responses_all, n_cv):
     max_r2 = -1.0
@@ -59,17 +50,18 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     layer_activity_all = layer_activity_all[keep_stim]
     probe_responses_all = probe_responses_all[keep_stim]
 
+    # uncomment for the permutation test
+    probe_responses_all = np.random.permutation(probe_responses_all)
+
     # parameters
     n_runs = 7
     n_cv = 10
     n_iter = 50
 
     # PCA
-    """
     pca = PCA(n_components=100)
     layer_activity_all += np.random.rand(layer_activity_all.shape[0], layer_activity_all.shape[1]) * 1e-9
     layer_activity_all = pca.fit_transform(layer_activity_all)
-    """
 
     # sPCA
     """
@@ -99,7 +91,6 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     best_alpha = scan_alpha(alphas, n_iter, layer_activity_all, probe_responses_all, n_cv)
     
     # repeat predictability estimation [n_runs] times
-    train_scores = []
     cv_scores = []
     for run in range(n_runs):
 
@@ -108,44 +99,26 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         layer_activity_all = layer_activity_all[shuffle_idx]
         probe_responses_all = probe_responses_all[shuffle_idx]
 
-        # estimate performance on the training set
-        clf = linear_model.Ridge(alpha=best_alpha, max_iter=n_iter)
-        clf.fit(layer_activity_all, probe_responses_all)
-        score_train = clf.score(layer_activity_all, probe_responses_all)
-        #predicted_train = clf.predict(layer_activity_all)
-        #r_train, pval_train = pearsonr(probe_responses_all, predicted_train)
-        train_scores.append(score_train)
-    
         # estimante performance on the test set
         clf = linear_model.Ridge(alpha=best_alpha, max_iter=n_iter)
-        #predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv) 
         score_cv = cross_validation.cross_val_score(clf, layer_activity_all, probe_responses_all, cv=n_cv)
-        #r, pval = pearsonr(probe_responses_all, predicted)
         cv_scores.append(np.mean(score_cv))
 
-    mean_score_diff = np.mean(np.abs(np.array(train_scores) - np.array(cv_scores)))
-
-    # display progress
-    print 'Tested  %s: %s to probe %d -- %f' % (subject_name, layer, pid, mean_score_diff)
-
-    return (layer, pid, mean_score_diff)
+    return (layer, pid, np.mean(cv_scores))
 
 
 # prepare lists of probe coordinates for each layer
-print 'Loading list of layers...'
 layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
 assignments = {}
 for layer in layers:
     assignments[layer] = []
 
 # load DNN activations
-print 'Loading DNN activations...'
 activations = {}
 for layer in layers:
     activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
 
 # load list of stimuli in the order they were presented to DNN
-print 'Loading DNN stimuli...'
 dnn_stimuli = np.loadtxt('../../Data/DNN/imagesdone.txt', dtype={'names': ('stimulus', 'class'), 'formats': ('S10', 'i1')})
 dnn_stimuli = [x[0].split('.')[0] for x in dnn_stimuli]
 
@@ -154,7 +127,6 @@ listing = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
 
 # load brain data
 sfile = listing[sid]
-print 'Loading %s...' % sfile
 
 # load the matlab structure 
 s = sio.loadmat('../../Data/Intracranial/Processed/%s/%s' % (featureset, sfile))
@@ -195,12 +167,10 @@ results = Parallel(n_jobs=ncores, backend="threading")(delayed(predict_from_laye
                                                                layer_activity[layer], probe_responses[:, pid])
                                                        for (layer, pid) in parallel_grid)
 
-print 'Training the models took', time.time() - start
-
 # gather overall stats
-diffs = []
+cv_scores = []
 for record in results:
-    layer, pid, score_diff = record
-    diffs.append(score_diff)
+    layer, pid, score = record
+    cv_scores.append(score)
 
-print np.mean(np.array(diffs))
+print cv_scores
