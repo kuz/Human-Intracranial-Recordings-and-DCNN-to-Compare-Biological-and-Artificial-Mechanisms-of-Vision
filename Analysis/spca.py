@@ -41,7 +41,8 @@ X_test_pca = pca.transform(X_test)
 s = X_train.T * np.matrix(y_train).T
 n = np.sqrt(np.sum(X_train**2, axis=0)).T
 sn = np.ravel(s / np.matrix(n).T)
-keep_features = np.where(sn > np.mean(sn))[0]
+sn = np.nan_to_num(sn)
+keep_features = np.where(sn > np.mean(sn[sn > 0.0]))[0]
 X_train_th = X_train[:, keep_features]
 X_test_th = X_test[:, keep_features]
 pca = decomposition.PCA(n_components=1)
