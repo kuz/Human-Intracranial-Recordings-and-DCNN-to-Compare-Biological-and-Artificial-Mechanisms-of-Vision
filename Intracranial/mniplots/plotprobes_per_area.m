@@ -8,8 +8,9 @@ addpath('../lib/mnimesh');
 
 % parameters
 featureset = 'LFP_bipolar_noscram';
-talareich_level = 5;
-area_of_interest = 'undefined';
+%talareich_level = 5;
+area_of_interest = '0';
+db = load_nii('../lib/mni2name/brodmann.nii');
 
 % list of subjects
 listing = dir(['../../../Data/Intracranial/Processed/' featureset '/*.mat']);
@@ -40,14 +41,18 @@ for fid = 1:length(listing)
     
     % plot each prob in corresponding color
     for pid = 1:size(s.probes.mni, 1)
-        [~, areas] = mni2name([s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3)]);
-        if strcmp(areas{talareich_level}, area_of_interest) == 1
+        %[~, areas] = mni2name([s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3)]);
+        %key = areas{talareich_level}
+        [~, areas] = mni2name_brodmann(s.probes.mni, db);
+        key = num2str(areas{1});
+        if strcmp(key, area_of_interest) == 1
             plot3(s.probes.mni(pid, 1), s.probes.mni(pid, 2), s.probes.mni(pid, 3), '.', 'MarkerSize', 20);
         end
     end
     
     % clear workspace
-    clearvars -except xview tri normal nbr mesh listing fig coord featureset talareich_level area_of_interest
+    clearvars -except xview tri normal nbr mesh listing fig coord featureset ...
+                      talareich_level area_of_interest db
     
 end
 
