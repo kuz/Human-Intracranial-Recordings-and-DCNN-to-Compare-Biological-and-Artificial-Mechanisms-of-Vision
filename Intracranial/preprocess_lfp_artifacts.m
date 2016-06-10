@@ -1,6 +1,6 @@
 % paramters
-indata = 'LFP_bipolar_noscram_ventral';
-outdata = 'LFP_bipolar_noscram_ventral_artif';
+indata = 'LFP_bipolar_noscram';
+outdata = 'LFP_bipolar_noscram_artif';
 threshold = 10.0;
 
 % load subject list
