@@ -11,6 +11,11 @@ end
 % parameters
 indata = 'LFP_bipolar_noscram_artif';
 outdata = ['mean' bandname '_biploar_noscram_artif'];
+if exist(['../../../Data/Intracranial/Processed/' outdata], 'dir') == 7
+    disp(['Directory exists: ' outdata ', exiting...'])
+    exit()
+end
+mkdir(['../../../Data/Intracranial/Processed/' outdata])
 
 % load third party code
 addpath('../lib/spectra')
