@@ -8,7 +8,7 @@ addpath('lib/mni2name')
 
 
 %% Parameters
-featureset = 'meangamma_bipolar_noscram_artif_ventral_brodmann';
+featureset = 'meangamma_bipolar_noscram_artif';
 atlas = 'brodmann';
 
 % load atlas
@@ -73,7 +73,7 @@ end
 % second line -- names of the areas
 % the rest    -- data
 %   columns   -- images
-filename = ['../../Outcome/Biclustering matrix/' featureset '.csv'];
+filename = ['../../Outcome/Biclustering matrix/' featureset '_' atlas '.csv'];
 fid = fopen(filename, 'w');
 fprintf(fid, [strjoin(subjects', ',') '\n']);
 fprintf(fid, [strjoin(arrayfun(@(x) num2str(x{1}), labels, 'UniformOutput', false)', ',') '\n']);
