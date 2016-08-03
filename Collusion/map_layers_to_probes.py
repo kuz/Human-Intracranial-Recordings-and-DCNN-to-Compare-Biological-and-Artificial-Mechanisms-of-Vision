@@ -64,10 +64,13 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     n_cv = 10
     n_iter = 50
 
+    # uncomment for the permutation test
+    #probe_responses_all = np.random.permutation(probe_responses_all)
+
     # PCA
-    #pca = PCA(n_components=100)
-    #layer_activity_all += np.random.rand(layer_activity_all.shape[0], layer_activity_all.shape[1]) * 1e-9
-    #layer_activity_all = pca.fit_transform(layer_activity_all)
+    pca = PCA(n_components=200)
+    layer_activity_all += np.random.rand(layer_activity_all.shape[0], layer_activity_all.shape[1]) * 1e-6
+    layer_activity_all = pca.fit_transform(layer_activity_all)
 
     # sPCA
     #s = layer_activity_all.T * np.matrix(probe_responses_all).T
@@ -111,7 +114,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         r, pval = pearsonr(probe_responses_all, predicted)
 
         # drop not significant results
-        if pval > 0.01 or r < 0.0:
+        if pval > 0.0001 or r < 0.0:
             r = 0.0
         r_scores[run] = r
     
@@ -136,6 +139,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
 # prepare lists of probe coordinates for each layer
 print 'Loading list of layers...'
 layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
+layers = layers[:5]
 assignments = {}
 for layer in layers:
     assignments[layer] = []
@@ -224,11 +228,14 @@ print 'Training the models took', time.time() - start
 print 'Storing mapping for %s...' % subject['name']
 
 # prepare the structure
-coefficients = [None] * 8
+coefficients = [None] * len(layers)
 for lid in range(len(layers)):
     coefficients[lid] = [0.0] * nprobes
 
 # put every result to a corresponding cell
+print '------------------------------------'
+print results
+print '------------------------------------'
 for record in results:
     layer, pid, r = record
     coefficients[layers.index(layer)][pid] = r
