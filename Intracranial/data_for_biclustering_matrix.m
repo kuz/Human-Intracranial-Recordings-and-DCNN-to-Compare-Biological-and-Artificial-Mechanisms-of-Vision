@@ -5,10 +5,10 @@
 
 %% Imports
 addpath('lib/mni2name')
-
+addpath('lib/nifti')
 
 %% Parameters
-featureset = 'meangamma_bipolar_noscram_artif';
+featureset = 'meangamma_400ms';
 atlas = 'brodmann';
 
 % load atlas

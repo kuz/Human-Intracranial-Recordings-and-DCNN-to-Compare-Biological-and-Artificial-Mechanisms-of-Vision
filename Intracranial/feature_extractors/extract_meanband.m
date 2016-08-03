@@ -10,7 +10,7 @@ end
 
 % parameters
 indata = 'LFP_bipolar_noscram_artif';
-outdata = ['mean' bandname '_biploar_noscram_artif'];
+outdata = ['mean' bandname '_400ms'];
 if exist(['../../../Data/Intracranial/Processed/' outdata], 'dir') == 7
     disp(['Directory exists: ' outdata ', exiting...'])
     exit()
@@ -76,8 +76,10 @@ for sfile = listing'
 
             % take only part of the signal
             stimulus_at = 256;
-            from = stimulus_at + 26;   % 50 ms
-            till = stimulus_at + 128;  % 250 ms
+            %from = stimulus_at + 26;   % 50 ms
+            %till = stimulus_at + 128;  % 250 ms
+            from = stimulus_at + 79; % 150ms
+            till = stimulus_at + 205; % 400ms 
             fqsignal = power(:, from:till);
 
             % normalization A: whole band average / whole band baseline average
