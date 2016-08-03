@@ -1,14 +1,35 @@
 %
 % Compute stats of probe to layer assignments
-%
+%   
 
 addpath('../Intracranial/lib/mni2name')
+addpath('../Intracranial/lib/nifti')
 
 
 %% Parameters
-mapperset = 'meangamma_ventral_noscram.pca';
-featureset = 'meangamma_ventral_noscram';
+mapperset = 'meangamma_bipolar_noscram_artif_17_20_brodmann.actual.0001';
+featureset = 'meangamma_bipolar_noscram_artif_17_20_brodmann';
+atlas = 'brodmann';
 talareich_level = 5;
+nlayers = 5;
+
+% load atlas
+if strcmp(atlas, 'initial')
+    talareich_level = 5;
+    %areas_of_interest = {'brodmann area 17', 'brodmann area 18', 'brodmann area 19', ...
+    %                     'brodmann area 37', 'brodmann area 20', 'brodmann area 38', ...
+    %                     'brodmann area 28', 'brodmann area 27', 'brodmann area 35'};
+    areas_of_interest = {'brodmann area 17', 'brodmann area 18', 'brodmann area 19', ...
+                         'brodmann area 37', 'brodmann area 20'};
+elseif strcmp(atlas, 'brodmann')
+    db = load_nii('lib/mni2name/brodmann.nii');
+    %areas_of_interest = {'17', '18', '19', '37', '20', '38', '28', '27', '35'};
+    areas_of_interest = {'17', '18', '19', '37', '20'};
+elseif strcmp(atlas, 'aicha')
+    db = load_nii('lib/mni2name/aicha.nii');
+    labels = load('lib/mni2name/aicha.labels.mat');
+    areas_of_interest = {}; % TODO
+end
 
 
 %% List of subject for whom we have the mapping
@@ -20,9 +41,6 @@ area_id_map = containers.Map();
 area_id_map_reverse = {};
 stats = {};
 
-areas_of_interest = {'brodmann area 17', 'brodmann area 18', 'brodmann area 19', ...
-                     'brodmann area 37', 'brodmann area 20', 'brodmann area 38', ...
-                     'brodmann area 28', 'brodmann area 27', 'brodmann area 35'};
 for i = 1:length(areas_of_interest)
     area = areas_of_interest{i};
     area_id_map(area) = i;
@@ -40,9 +58,18 @@ for fid = 1:length(listing)
     % load the data
     load(['../../Data/Intracranial/Processed/' featureset '/' subject '.mat'])
     
-    % get the names of the areas
+    % use atlas to map probes to areas
     s.probes.mni(isnan(s.probes.mni)) = 0;
-    [~, areas] = mni2name(s.probes.mni);
+    if strcmp(atlas, 'initial')
+        [~, areas] = mni2name(s.probes.mni);
+        nareas = size(areas, 1);
+    elseif strcmp(atlas, 'brodmann')
+        [~, areas] = mni2name_brodmann(s.probes.mni, db);
+        nareas = length(areas);
+    elseif strcmp(atlas, 'aicha')
+        [~, areas] = mni2name_aicha(s.probes.mni, db);
+        nareas = length(areas);
+    end
     
     % load the mapping
     probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' mapperset '/' listing(fid).name]);
@@ -55,15 +82,22 @@ for fid = 1:length(listing)
     end
     
     % compute stats
-    for i = 1:size(areas, 1)
+    for i = 1:nareas
+        
+        % pick contrainer key depending on the atlas in use
+        if strcmp(atlas, 'initial')
+            key = areas{i, talareich_level};
+        elseif strcmp(atlas, 'brodmann')
+            key = num2str(areas{i});
+        end
         
         % keep only Brodmann areas 17, 18, 19, 37, 20, 38, 28, 27, 35
-        if ~isKey(area_id_map, areas{i, talareich_level})
+        if ~isKey(area_id_map, key)
             continue
         end
         
         % key area id
-        area_id = area_id_map(areas{i, talareich_level});
+        area_id = area_id_map(key);
         
         % update counter
         if area_id > size(stats, 1) || probe_to_layer_map(i) > size(stats, 2)
@@ -77,7 +111,7 @@ for fid = 1:length(listing)
     
     % clear workspace
     clearvars -except listing talareich_level featureset area_id_map area_id_map_reverse ...
-                      stats areas_of_interest mapperset
+                      stats areas_of_interest mapperset atlas db labels nlayers
     
 end
 
@@ -89,15 +123,17 @@ stats_counts = stats;
 
 %% for each region compute "assigned to layer L / total in this region"
 for r = 1:length(area_id_map)
-    for l = 1:8
-        stats(r, l) = stats_counts(r, l) / sum(stats_counts(r, 1:8));
+    for l = 1:nlayers
+        %stats(r, l) = stats_counts(r, l) / sum(stats_counts(r, 1:nlayers));
+        stats(r, l) = stats_counts(r, l) / sum(sum(stats_counts(1:nlayers, 1:nlayers)));
     end
 end
 stats(isnan(stats)) = 0;
 
 %% Plot heatmap
-imagesc(stats(:, 1:8));
-set(gca, 'XTick', 1:8, 'YTick', 1:length(area_id_map_reverse), 'YTickLabel', area_id_map_reverse)
+imagesc(stats(:, 1:nlayers));
+set(gca, 'XTick', 1:nlayers, 'YTick', 1:length(area_id_map_reverse), 'YTickLabel', area_id_map_reverse)
+%set(gca, 'Clim', [0.0 0.2])
 xlabel('Layer')
 set(gca,'Position',[0.35 0.05 0.4 0.9])
 
@@ -108,10 +144,10 @@ for i = 1:length(sums)
 end
 
 % numbers on top of imagesc
-counts = stats_counts(:, 1:8);
+counts = stats_counts(:, 1:nlayers);
 textStrings = num2str(counts(:), '%d');
 textStrings = strtrim(cellstr(textStrings));
-[x,y] = meshgrid(1:8, 1:size(stats_counts, 1));
+[x,y] = meshgrid(1:nlayers, 1:size(stats_counts, 1));
 hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center');
 %midValue = mean(get(gca,'CLim'));
 %textColors = repmat(counts(:) > midValue,1,3);

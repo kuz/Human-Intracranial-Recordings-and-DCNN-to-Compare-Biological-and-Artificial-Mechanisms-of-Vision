@@ -8,10 +8,17 @@ addpath('lib/nifti');
 
 % parameters
 indata = 'LFP_bipolar_noscram';
-%talareich_level = 5;
-%db = load_nii('lib/mni2name/brodmann.nii');
-db = load_nii('lib/mni2name/aicha.nii');
-labels = load('lib/mni2name/aicha.labels.mat');
+atlas = 'aicha';  % initial, brodmann, aicha
+
+% load atlas
+if atlas == 'initial'
+    talareich_level = 5;
+elseif atlas == 'brodmann'
+    db = load_nii('lib/mni2name/brodmann.nii');
+elseif atlas == 'aicha'
+    db = load_nii('lib/mni2name/aicha.nii');
+    labels = load('lib/mni2name/aicha.labels.mat');
+end
 
 % load subject list
 listing = dir(['../../Data/Intracranial/Processed/' indata '/*.mat']);
@@ -25,22 +32,36 @@ for sfile = listing'
     load(['../../Data/Intracranial/Processed/' indata '/' sfile.name]);
     
     s.probes.mni(isnan(s.probes.mni)) = 0;
-    %[~, areas] = mni2name(s.probes.mni);
-    %[~, areas] = mni2name_brodmann(s.probes.mni, db);
-    [~, areas] = mni2name_aicha(s.probes.mni, db);
+    
+    % use atlas to map probes to areas
+    if atlas == 'initial'
+        [~, areas] = mni2name(s.probes.mni);
+        nareas = size(areas, 1);
+    elseif atlas == 'brodmann'
+        [~, areas] = mni2name_brodmann(s.probes.mni, db);
+        nareas = length(areas);
+    elseif atlas == 'aicha'
+        [~, areas] = mni2name_aicha(s.probes.mni, db);
+        nareas = length(areas);
+    end
     
     % count number of times each area appears
-    %for i = 1:size(areas, 1)
-    for i = 1:length(areas)
-        %key = areas{i, talareich_level};
-        %key = num2str(areas{i});
+    for i = 1:nareas
         
-        if areas{i} == 0
-            key = '0';
-        else
-            key = labels.aicha{areas{i}, 2};
+        % pick contrainer key depending on the atlas in use
+        if atlas == 'initial'
+            key = areas{i, talareich_level};
+        elseif atlas == 'brodmann'
+            key = num2str(areas{i});
+        elseif atlas == 'aicha'
+            if areas{i} == 0
+                key = '0';
+            else
+                key = labels.aicha{areas{i}, 2};
+            end
         end
         
+        % counting happens here
         if ~isKey(counts, key)
             counts(key) = 1;
         else
@@ -53,6 +74,7 @@ for sfile = listing'
     
 end
 
+% output results
 fprintf('Area\tCount\n')
 fprintf('----\t-----\n')
 for k = counts.keys()
