@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import glob
 
 # parameters
-featureset = 'meangamma_biploar_noscram_ventral_artif'
-paramset = 'pca100'
+featureset = 'meangamma_bipolar_noscram_artif_ventral_brodmann'
+paramset = 'pca250'
 
 # load data
 actual = []
