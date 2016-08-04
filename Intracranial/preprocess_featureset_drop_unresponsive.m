@@ -98,7 +98,7 @@ for si = 1:length(listing)
     load(['../../Data/Intracranial/Processed/' indata '/' sfile.name]);
     
     % drop discarded probes
-    keepidx = results(results(:, 1) == 1 & results(:, 4) == 0, 2);
+    keepidx = results(results(:, 1) == si & results(:, 4) == 0, 2);
     s.probes.rod_names = s.probes.rod_names(keepidx);
     s.probes.probe_ids = s.probes.probe_ids(keepidx);
     s.probes.mni = s.probes.mni(keepidx, :);
