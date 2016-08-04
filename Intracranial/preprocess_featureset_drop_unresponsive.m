@@ -8,7 +8,7 @@ end
 
 % paramters
 indata = 'LFP_bipolar_noscram_artif';
-outdata = 'LFP_biploar_noscram_artif_responsive';
+outdata = 'LFP_bipolar_noscram_artif_responsive';
 
 % load third party code
 addpath('lib')
