@@ -85,14 +85,17 @@ for si = 1:length(listing)
     
 end
 
-% decide which probes will be dropper
+% decide which probes will be dropped
 pID = fdr(results(:, 3), 0.05);
+disp(['pID = ' num2str(pID)])
 results(:, 4) = results(:, 3) >= pID;
 
 % drop all of the probes marked for dropping
 for si = 1:length(listing)
     sfile = listing(si);
-    disp(['Cleaning ' sfile.name])
+    disp(['Cleaning ' sfile.name ': dropping ' ...
+          num2str(length(results(results(:, 1) == si & results(:, 4) == 1, 2))) ...
+          ' (out of ' num2str(length(results(results(:, 1) == si))) ') probes'])
     
     % load the data
     load(['../../Data/Intracranial/Processed/' indata '/' sfile.name]);
@@ -102,7 +105,7 @@ for si = 1:length(listing)
     s.probes.rod_names = s.probes.rod_names(keepidx);
     s.probes.probe_ids = s.probes.probe_ids(keepidx);
     s.probes.mni = s.probes.mni(keepidx, :);
-    s.data = s.data(:, keepidx);
+    s.data = s.data(:, keepidx, :);
     
     % store the data
     save(['../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
