@@ -52,10 +52,10 @@ representation = subject['data'][new_order]
 nstim = representation.shape[0]
 nprobes = representation.shape[1]
 for p in range(nprobes):
-    sm = distance.squareform(distance.pdist(np.random.permutation(representation[:, p]).reshape((nstim, 1)), dist))
+    sm = distance.squareform(distance.pdist(representation[:, p].reshape((nstim, 1)), dist))
     
     # store the data
-    np.savetxt('../../Data/RSA/%s.shuffled/numbers/brain-%d-%d.txt' % (dist, sid, p), sm, fmt='%.6f')
+    np.savetxt('../../Data/RSA/%s/numbers/brain-%d-%d.txt' % (dist, sid, p), sm, fmt='%.6f')
 
     # store the plot
     plt.figure();
@@ -63,5 +63,5 @@ for p in range(nprobes):
     if np.max(sm) > 5.0:
         plt.clim(0.0, 5.0);
     plt.colorbar();
-    plt.savefig('../../Data/RSA/%s.shuffled/plots/brain-%d-%d.png' % (dist, sid, p));
+    plt.savefig('../../Data/RSA/%s/plots/brain-%d-%d.png' % (dist, sid, p));
     plt.clf();
