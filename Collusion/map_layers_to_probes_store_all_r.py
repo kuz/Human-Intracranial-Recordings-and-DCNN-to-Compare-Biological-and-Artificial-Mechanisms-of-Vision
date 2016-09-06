@@ -68,9 +68,13 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     #probe_responses_all = np.random.permutation(probe_responses_all)
 
     # PCA
-    pca = PCA(n_components=200)
-    layer_activity_all += np.random.rand(layer_activity_all.shape[0], layer_activity_all.shape[1]) * 1e-6
-    layer_activity_all = pca.fit_transform(layer_activity_all)
+    try:
+        pca = PCA(n_components=200)
+        layer_activity_all += np.random.rand(layer_activity_all.shape[0], layer_activity_all.shape[1]) * 1e-6
+        layer_activity_all = pca.fit_transform(layer_activity_all)
+    except:
+        print 'ERROR: PCA did not converge. Skipping the probe'
+        return (layer, pid, np.zeros(n_runs))
 
     # sPCA
     #s = layer_activity_all.T * np.matrix(probe_responses_all).T
