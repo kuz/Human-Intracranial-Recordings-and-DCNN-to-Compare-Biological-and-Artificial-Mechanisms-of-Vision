@@ -34,7 +34,7 @@ maps = np.empty((nprobes, len(layers)))
 for lid, layer in enumerate(layers):
     for pid in range(nprobes):
         r, p = spearmanr(np.ravel(mms.fit_transform(dnn_dsm[layer])), np.ravel(mms.fit_transform(brain_dsm[pid])))
-        if r > 0.0 and p < 0.0001:
+        if r > 0.0 and p < 0.000000000001:
             maps[pid, lid] = r
 
 # replace NaN's with 0
@@ -42,5 +42,5 @@ maps[np.isnan(maps)] = 0.0
 
 # store the scores
 subjects = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
-np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/rsa_%s/%s.txt' % (featureset, os.path.splitext(subjects[sid])[0]), maps, fmt='%.4f')
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/rsa_%s_%s/%s.txt' % (dist, featureset, os.path.splitext(subjects[sid])[0]), maps, fmt='%.4f')
 
