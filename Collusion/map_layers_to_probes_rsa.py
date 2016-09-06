@@ -30,12 +30,23 @@ for pid, filename in enumerate(listing):
 # compute correlation between every layer-brain pair of RSA matrices
 mms = MinMaxScaler()
 nprobes = len(listing)
+nstim = brain_dsm[0].shape[0]
 maps = np.empty((nprobes, len(layers)))
 for lid, layer in enumerate(layers):
     for pid in range(nprobes):
-        r, p = spearmanr(np.ravel(mms.fit_transform(dnn_dsm[layer])), np.ravel(mms.fit_transform(brain_dsm[pid])))
-        if r > 0.0 and p < 0.000000000001:
-            maps[pid, lid] = r
+        dnn = mms.fit_transform(dnn_dsm[layer])
+        brain = mms.fit_transform(brain_dsm[pid])
+        score = 0
+        for i in range(nstim):
+            # here we can decide what do we use as a score between the two matrices
+            # a) number of images that were significantly correlated in both matrices
+            r, p = spearmanr(dnn[i, :], brain[i, :])
+            if p < 0.0001:
+                score += 1
+
+            # b) sum of r scores of all significanly correlated images
+            # todo
+        maps[pid, lid] = score
 
 # replace NaN's with 0
 maps[np.isnan(maps)] = 0.0
