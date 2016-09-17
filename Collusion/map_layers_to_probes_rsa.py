@@ -23,7 +23,7 @@ if shuffle:
 
 # read list of subjects
 subjects = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
-sname = subjects[14].split('.')[0]
+sname = subjects[sid].split('.')[0]
 
 # load layer similarity matrices including the "layer 0" (pixel space)
 layers = ['pixels', 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
@@ -56,8 +56,8 @@ for lid, layer in enumerate(layers):
 
             # b) sum of r scores of all significanly correlated images
             r, p = spearmanr(dnn[i, :], brain[i, :])
-            #if p < 0.00001:
-            score += r
+            if p < 0.00001:
+                score += r
         
         maps[pid, lid] = score / float(nstim)
 
