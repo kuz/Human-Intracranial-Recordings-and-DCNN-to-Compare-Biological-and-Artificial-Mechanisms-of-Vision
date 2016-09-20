@@ -46,6 +46,10 @@ for lid, layer in enumerate(layers):
     for pid in range(nprobes):
         dnn = mms.fit_transform(dnn_dsm[layer])
         brain = mms.fit_transform(brain_dsm[pid])
+        r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
+        if r > 0.0 and p <= 0.00001:
+            maps[pid, lid] = r 
+        """
         score = 0
         for i in range(nstim):
             # here we can decide what do we use as a score between the two matrices
@@ -60,6 +64,7 @@ for lid, layer in enumerate(layers):
                 score += r
         
         maps[pid, lid] = score / float(nstim)
+        """
 
 # replace NaN's with 0
 maps[np.isnan(maps)] = 0.0
