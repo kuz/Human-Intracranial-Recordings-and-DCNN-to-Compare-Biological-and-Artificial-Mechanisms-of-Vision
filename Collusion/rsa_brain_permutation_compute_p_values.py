@@ -12,7 +12,7 @@ suffix = '.nothresh'
 # list of subjects
 subjects = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
 
-def compute_varexp(nareas, nlayers, subjects, featureset, suffix, actual, prun=None):
+def compute_varexp(nareas, nlayers, subjects, featureset, suffix, actual, prun):
     """
     Compute mapping matrix areas-to-layer with the values showing variance explained
     """
@@ -43,13 +43,13 @@ def compute_varexp(nareas, nlayers, subjects, featureset, suffix, actual, prun=N
     return np.nan_to_num(rhosum / np.tile(counts, (rhosum.shape[1], 1)).T) * 100
 
 # compute mapping matrix on the actual data
-true_varexp = compute_varexp(nareas, nlayers, subjects, featureset, actual=True)
+true_varexp = compute_varexp(nareas, nlayers, subjects, featureset, suffix, actual=True, prun=None)
 
 # compute mapping matrix for each permutation run
 dist_perm_varexp = np.zeros((nruns, true_varexp.shape[0], true_varexp.shape[1]))
 for r in range(1, nruns + 1):
     print 'Building mapping for run %d' % r
-    dist_perm_varexp[r - 1] = compute_varexp(nareas, nlayers, subjects, featureset, actual=False, prun=r)
+    dist_perm_varexp[r - 1] = compute_varexp(nareas, nlayers, subjects, featureset, suffix, actual=False, prun=r)
 
 # compute p-values
 pvals = np.ones(true_varexp.shape) * np.inf
@@ -58,4 +58,4 @@ for aid in range(nareas):
         pvals[aid, lid] = np.sum(dist_perm_varexp[:, aid, lid] >= true_varexp[aid, lid]) / float(nruns)
 
 # store the mapping of p-values
-np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/Permutation/rsa_euclidean_%s%s/pvalues.txt' % (featureset, suffix), pvals, fmt='%.6f')
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/Permutation/rsa_euclidean_%s%s_pvalues.txt' % (featureset, suffix), pvals, fmt='%.6f')

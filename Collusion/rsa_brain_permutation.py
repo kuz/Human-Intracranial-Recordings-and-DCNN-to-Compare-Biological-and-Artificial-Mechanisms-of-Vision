@@ -33,7 +33,6 @@ subjects = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
 # load brain data
 brain_dsm = {}
 for sid, sfile in enumerate(subjects):
-    print 'Processing %s...' % sfile
 
     # load the matlab structure 
     s = sio.loadmat('../../Data/Intracranial/Processed/%s/%s' % (featureset, sfile))
@@ -67,7 +66,8 @@ for sid, sfile in enumerate(subjects):
             dnn = mms.fit_transform(dnn_dsm[layer])
             brain = mms.fit_transform(brain_dsm[pid])
             r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
-            maps[pid, lid] = r
+            if r > 0.0 and p <= 0.00001:
+                maps[pid, lid] = r
     
     # store the scores
     np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/Permutation/rsa_%s_%s/%d/%s.txt' % (dist, featureset, prun, os.path.splitext(subjects[sid])[0]), maps, fmt='%.6f')
