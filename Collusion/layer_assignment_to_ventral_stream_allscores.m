@@ -7,8 +7,8 @@ addpath('../Intracranial/lib/nifti')
 
 
 %% Parameters
-mapperset = 'meangamma_bipolar_noscram_artif';
-featureset = 'meangamma_bipolar_noscram_artif';
+mapperset = 'rsa_euclidean_meangamma_bipolar_noscram_artif_responsive_brodmann.kendall';
+featureset = 'meangamma_bipolar_noscram_artif_responsive';
 atlas = 'brodmann';
 talareich_level = 5;
 nlayers = 8;
@@ -41,6 +41,7 @@ listing = dir(['../../Data/Intracranial/Probe_to_Layer_Maps/' mapperset '/*.txt'
 area_id_map = containers.Map();
 area_id_map_reverse = {};
 stats = zeros(length(areas_of_interest), nlayers);
+counts = zeros(length(areas_of_interest), nlayers);
 signf_counts = zeros(1, length(areas_of_interest));
 total_counts = zeros(1, length(areas_of_interest));
 
@@ -77,13 +78,8 @@ for fid = 1:length(listing)
     % load the mapping
     probe_to_layer_map = load(['../../Data/Intracranial/Probe_to_Layer_Maps/' mapperset '/' listing(fid).name]);
     
-    % check
-    if sum(sum(probe_to_layer_map)) == 0
-        %disp('  Probes not assigned, skipping...')
-        continue
-    end
-    
     % compute stats
+    [maxv, maxi] = max(probe_to_layer_map');
     for i = 1:nareas
         
         % pick contrainer key depending on the atlas in use
@@ -101,8 +97,10 @@ for fid = 1:length(listing)
         % key area id
         area_id = area_id_map(key);
         
-        % update counter
-        stats(area_id, :) = stats(area_id, :) + probe_to_layer_map(i, 1:nlayers);
+        % update counters
+        stats(area_id, :) = stats(area_id, :) + (probe_to_layer_map(i, 1:nlayers) .^ 2); 
+        %stats(area_id, :) = stats(area_id, :) + (probe_to_layer_map(i, 1:nlayers)); 
+        counts(area_id, :) = counts(area_id, :) + (probe_to_layer_map(i, 1:nlayers) > 0);
         signf_counts(area_id) = signf_counts(area_id) + (sum(probe_to_layer_map(i, 1:nlayers)) > 0);
         total_counts(area_id) = total_counts(area_id) + 1;
 
@@ -111,38 +109,35 @@ for fid = 1:length(listing)
     % clear workspace
     clearvars -except listing talareich_level featureset area_id_map area_id_map_reverse ...
                       stats areas_of_interest mapperset atlas db labels nlayers signf_counts ...
-                      total_counts
+                      total_counts counts
     
 end
 
-%% for each region compute "assigned to layer L / total in this region"
-normalized_stats = zeros(size(stats));
-for r = 1:size(stats, 1)
-    for l = 1:nlayers
-        %normalized_stats(r, l) = stats(r, l) / sum(sum(stats(:, :)));
-        normalized_stats(r, l) = stats(r, l);
-    end
-end
-normalized_stats(isnan(normalized_stats)) = 0;
-stats = normalized_stats;
+%% variance explained normalized by the number of probes in the area
+varexp = (stats * 100) ./ repmat(signf_counts', 1, nlayers);
+
+%% What to plot
+toplot = varexp;
+%toplot = stats ./ (269);
+%toplot = stats ./ repmat(signf_counts', 1, nlayers) ./ nlayers;
 
 %% Plot heatmap
-imagesc(stats(:, 1:nlayers));
+imagesc(toplot(:, 1:nlayers));
 set(gca, 'XTick', 1:nlayers, 'YTick', 1:length(area_id_map_reverse), 'YTickLabel', area_id_map_reverse)
-%set(gca, 'Clim', [0.0 10.0])
+%set(gca, 'Clim', [0.03 0.05])
 xlabel('Layer')
 set(gca,'Position',[0.35 0.05 0.4 0.9])
 
 % total counts
 for i = 1:length(signf_counts)
-    text(8.7, i, [num2str(signf_counts(i)) ' / ' num2str(total_counts(i))])
+    text(nlayers + 0.7, i, [num2str(signf_counts(i)) ' / ' num2str(total_counts(i))])
 end
 
 % numbers on top of imagesc
-counts = stats(:, 1:nlayers);
-textStrings = num2str(counts(:), '%2.2f');
+strings = toplot(:, 1:nlayers);
+textStrings = num2str(strings(:), '%2.2f');
 textStrings = strtrim(cellstr(textStrings));
-[x,y] = meshgrid(1:nlayers, 1:size(stats, 1));
+[x,y] = meshgrid(1:nlayers, 1:size(toplot, 1));
 hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center');
 %midValue = mean(get(gca,'CLim'));
 %textColors = repmat(counts(:) > midValue,1,3);
