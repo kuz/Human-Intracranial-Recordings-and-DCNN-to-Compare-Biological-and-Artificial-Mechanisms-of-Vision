@@ -65,10 +65,23 @@ for sid, sfile in enumerate(subjects):
         for pid in range(nprobes):
             dnn = mms.fit_transform(dnn_dsm[layer])
             brain = mms.fit_transform(brain_dsm[pid])
+
+            """
+            # per-matrix
             r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
             if r > 0.0 and p <= 0.00001:
                 maps[pid, lid] = r
-    
+            """
+
+            # per-image
+            score = 0
+            for i in range(nstim):
+                r, p = spearmanr(dnn[i, :], brain[i, :])
+                if p < 0.00001:
+                    score += r
+
+            maps[pid, lid] = score / float(nstim) 
+
     # store the scores
     np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/Permutation/rsa_%s_%s/%d/%s.txt' % (dist, featureset, prun, os.path.splitext(subjects[sid])[0]), maps, fmt='%.6f')
 
