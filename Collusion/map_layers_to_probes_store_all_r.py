@@ -12,7 +12,7 @@ import scipy.io as sio
 from sklearn import linear_model
 from sklearn import cross_validation
 from sklearn.decomposition import PCA
-from scipy.stats import pearsonr
+from scipy.stats import spearmanr
 import multiprocessing
 from joblib import Parallel, delayed
 import argparse
@@ -115,7 +115,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
         predicted = cross_validation.cross_val_predict(clf, layer_activity_all, probe_responses_all, cv=n_cv) 
 
         # store the correlation coefficient
-        r, pval = pearsonr(probe_responses_all, predicted)
+        r, pval = spearmanr(probe_responses_all, predicted)
 
         # drop not significant results
         if pval > 0.0001 or r < 0.0:
