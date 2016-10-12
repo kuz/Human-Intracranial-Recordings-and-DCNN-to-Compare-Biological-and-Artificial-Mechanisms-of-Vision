@@ -73,11 +73,9 @@ class RSAPixel(RSA):
     def compute_sm(self):
         self.sm = scipydist.squareform(scipydist.pdist(self.representation, self.distance))
 
-    @abstractmethod
     def save_sm(self):
         np.savetxt('%s/RSA/%s/numbers/dnn-pixels.txt' % (self.DATADIR, self.distance), self.sm, fmt='%.6f')
 
-    @abstractmethod
     def load_sm(self):
         self.sm = np.loadtxt('%s/RSA/%s/numbers/dnn-pixels.txt' % (self.DATADIR, self.distance))
 
