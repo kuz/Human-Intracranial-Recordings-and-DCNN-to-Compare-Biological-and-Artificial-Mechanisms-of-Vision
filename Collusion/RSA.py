@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
+import os
 import numpy as np
 from scipy.ndimage import imread
 from scipy.spatial import distance as scipydist
@@ -17,8 +18,8 @@ class RSA:
     #: Matrix where data samples are stored
     representation = abstractproperty()
 
-    #: Resulting similarity matrix
-    sm = abstractproperty()
+    #: Resulting dissimilarity matrix
+    dsm = abstractproperty()
 
     #: Reordering of the images from the order of DNN into ordering by categories
     reorder_dnn_to_categories = []
@@ -33,7 +34,7 @@ class RSA:
         stimulation_stimuli = np.loadtxt('../Intracranial/stimsequence.txt', dtype='string')
 
         # create the reordering from stimulation order to order by category
-        for s in sorted(set(stimuli_by_category)):
+        for s in sorted(set(stimulation_stimuli)):
             for i in np.where(stimulation_stimuli == s)[0]:
                 self.reorder_stimulation_to_categories.append(i)
 
@@ -42,42 +43,43 @@ class RSA:
         dnn_stimuli = np.array([x[0].split('.')[0] for x in dnn_stimuli])
 
         # create the reordering from dnn order to order by category
-        for s in sorted(stimuli_by_category):
+        for s in sorted(stimulation_stimuli):
             for i in np.where(dnn_stimuli == s)[0]:
                 self.reorder_dnn_to_categories.append(i)
 
     @abstractmethod
-    def compute_sm(self):
+    def compute_dsm(self):
         pass
 
     @abstractmethod
-    def save_sm(self):
+    def save_dsm(self):
         pass
 
     @abstractmethod
-    def load_sm(self):
+    def load_dsm(self):
         pass
 
 
 class RSAPixel(RSA):
     
     representation = None
+    dsm = None
 
     def __init__(self, distance):
-        RDM.__init__(distance)
+        RSA.__init__(self, distance)
         self.representation = np.zeros((419, 51529))
         for i, fname in enumerate(os.listdir('%s/DNN/imagesdone/' % self.DATADIR)):
             self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
-        self.representation = self.representation[reorder_dnn_to_categories]
+        self.representation = self.representation[self.reorder_dnn_to_categories]
 
-    def compute_sm(self):
-        self.sm = scipydist.squareform(scipydist.pdist(self.representation, self.distance))
+    def compute_dsm(self):
+        self.dsm = scipydist.squareform(scipydist.pdist(self.representation, self.distance))
 
-    def save_sm(self):
-        np.savetxt('%s/RSA/%s/numbers/dnn-pixels.txt' % (self.DATADIR, self.distance), self.sm, fmt='%.6f')
+    def save_dsm(self):
+        np.savetxt('%s/RSA/%s/numbers/dnn-pixels.txt' % (self.DATADIR, self.distance), self.dsm, fmt='%.6f')
 
-    def load_sm(self):
-        self.sm = np.loadtxt('%s/RSA/%s/numbers/dnn-pixels.txt' % (self.DATADIR, self.distance))
+    def load_dsm(self):
+        self.dsm = np.loadtxt('%s/RSA/%s/numbers/dnn-pixels.txt' % (self.DATADIR, self.distance))
 
 class RSADNN(RSA):
     pass
@@ -98,8 +100,8 @@ if __name__ == '__main__':
 
     if source == 'pixels':
         rsa = RSAPixel(distance)
-        rsa.compute_sm()
-        rsa.save_sm()
+        rsa.compute_dsm()
+        rsa.save_dsm()
     elif source == 'dnn':
         pass
     elif source == 'brain':
