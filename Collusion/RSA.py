@@ -90,6 +90,7 @@ class RSAPixel(RSA):
         #plt.colorbar();
         #plt.savefig('%s/RSA/%s/plots/dnn-pixels.png' % (self.DATADIR, self.distance));
         #plt.clf();
+        pass
 
 
 class RSADNN(RSA):
@@ -149,8 +150,11 @@ if __name__ == '__main__':
         rsa.compute_dsm()
         rsa.save_dsm()
     elif source == 'dnn':
-        np_activation_data
-        pass
+        if np_activation_data == 'None':
+            raise Exception("Activation (-a) is a required argument for DNN RSA")
+        rsa = RSADNN(distance, np_activation_data)
+        rsa.compute_dsm()
+        rsa.save_dsm()
     elif source == 'brain':
         pass
     else:
