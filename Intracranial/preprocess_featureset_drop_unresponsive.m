@@ -8,7 +8,7 @@ end
 
 % paramters
 indata = 'LFP_bipolar_noscram_artif';
-outdata = 'LFP_bipolar_noscram_artif_responsive';
+outdata = 'LFP_bipolar_noscram_artif_responsive0001';
 
 % load third party code
 addpath('lib')
@@ -19,7 +19,7 @@ listing = dir(['../../Data/Intracranial/Processed/' indata '/*.mat']);
 listing = listing(range);
 
 % matrix to store the final results
-results = zeros(0, 4);
+results = zeros(0, 6);
 
 % for each subject
 for si = 1:length(listing)
@@ -75,7 +75,8 @@ for si = 1:length(listing)
         
         % test the null hypothesis that baseline = signal in band means
         p = signrank(baseline_band_means, fqsignal_band_means);
-        results = [results; si, probe, p, 0];
+        disp([' ' num2str(mean(baseline_band_means)) ' -> ' num2str(mean(fqsignal_band_means))])
+        results = [results; si, probe, p, 0, mean(baseline_band_means), mean(fqsignal_band_means)];
         
     end 
     
@@ -86,6 +87,7 @@ for si = 1:length(listing)
 end
 
 % decide which probes will be dropped
+save(['../../Outcome/Probe responsiveness/' outdata], 'results')
 pID = fdr(results(:, 3), 0.05);
 disp(['pID = ' num2str(pID)])
 results(:, 4) = results(:, 3) >= pID;
