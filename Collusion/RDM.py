@@ -81,7 +81,7 @@ class RDMPixel(RDM):
         self.representation = self.representation[self.reorder_dnn_to_categories]
 
         if self.shuffle:
-            new_order = np.random.permutation(self.reorder_dnn_to_categories)
+            new_order = np.random.permutation(range(self.representation.shape[0]))
             self.representation = self.representation[new_order]
 
     def compute_dsm(self):
@@ -117,7 +117,7 @@ class RDMDNN(RDM):
             self.representation[layer] = self.representation[layer][self.reorder_dnn_to_categories]
 
             if self.shuffle:
-                new_order = np.random.permutation(self.reorder_dnn_to_categories)
+                new_order = np.random.permutation(range(self.representation[layer].shape[0]))
                 self.representation[layer] = self.representation[layer][new_order]
 
     def compute_dsm(self):
@@ -159,8 +159,8 @@ class RDMBrain(RDM):
         self.representation = self.subject['data'][self.reorder_stimulation_to_categories]
 
         if self.shuffle:
-        new_order = np.random.permutation(self.reorder_stimulation_to_categories)
-        self.representation = self.representation[new_order]
+            new_order = np.random.permutation(range(self.representation.shape[0]))
+            self.representation = self.representation[new_order]
 
     def compute_and_save_batch_dsm(self):
         print 'Processing %s' % self.subject['name']
@@ -206,19 +206,19 @@ if __name__ == '__main__':
     featureset = str(args.featureset)
     shuffle = bool(args.shuffle == 'True')
 
-    if source == 'pixels':
+    if datatype == 'pixels':
         rdm = RDMPixel(distance, shuffle)
         rdm.compute_dsm()
         rdm.save_dsm()
 
-    elif source == 'dnn':
+    elif datatype == 'dnn':
         if np_activation_data == 'None':
             raise Exception("Activation (-a) is a required argument for DNN RDM")
         rdm = RDMDNN(distance, np_activation_data, shuffle)
         rdm.compute_dsm()
         rdm.save_dsm()
 
-    elif source == 'brain':
+    elif datatype == 'brain':
         if sid is None:
             raise Exception("Subject ID (-i) is a required argument for Brain RDM")
         if featureset == 'None':
