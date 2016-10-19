@@ -163,6 +163,7 @@ class RDMBrain(RDM):
         self.representation = self.representation[new_order]
 
     def compute_and_save_batch_dsm(self):
+        print 'Processing %s' % self.subject['name']
         nstim = self.representation.shape[0]
         nprobes = self.representation.shape[1]
 
@@ -172,7 +173,6 @@ class RDMBrain(RDM):
             return None
 
         for p in range(nprobes):
-            print 'Processing %s probe %d' % (self.subject['name'], p)
             sm = scipydist.squareform(scipydist.pdist(self.representation[:, p].reshape((nstim, 1)), self.distance))
             np.savetxt('%s/RSA/%s%s/numbers/brain-%s-%d.txt' % (self.DATADIR, self.distance, self.suffix, self.subject['name'], p), sm, fmt='%.3f')
 
