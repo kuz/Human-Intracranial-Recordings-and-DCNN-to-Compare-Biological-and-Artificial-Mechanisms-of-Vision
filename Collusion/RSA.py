@@ -131,7 +131,44 @@ class RSADNN(RSA):
 
 
 class RSABrain(RSA):
-    pass
+    representation = None
+    dsm = None
+    subject = {}
+    suffix = ''
+
+    def __init__(self, distance, featureset, sid):
+        RSA.__init__(self, distance)
+        subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
+        sfile = subjects[sid]
+        s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, featureset, sfile))
+        self.subject['data'] = s['s']['data'][0][0]
+        self.subject['name'] = s['s']['name'][0][0][0]
+        self.representation = self.subject['data'][self.reorder_stimulation_to_categories]
+
+    def compute_and_save_batch_dsm(self):
+        nstim = representation.shape[0]
+        nprobes = representation.shape[1]
+
+        if nprobes == 0:
+            sm = np.zeros((nstim, nstim))
+            np.savetxt('%s/RSA/%s%s/numbers/brain-%s-%d.txt' % (self.DATADIR, self.distance, self.suffix, self.subject['name'], 0), sm, fmt='%.3f')
+            return None
+
+        for p in range(nprobes):
+            sm = scipydist.squareform(scipydist.pdist(representation[:, p].reshape((nstim, 1)), self.distance))
+            np.savetxt('%s/RSA/%s%s/numbers/brain-%s-%d.txt' % (self.DATADIR, self.distance, self.suffix, self.subject['name'], p), sm, fmt='%.3f')
+
+    def compute_dsm(self):
+        raise Exception("compute_dsm() is not in use for Brain RSA, use compute_and_save_batch_dsm() instead")
+
+    def save_dsm(self):
+        raise Exception("save_dsm() is not in use for Brain RSA, use compute_and_save_batch_dsm() instead")
+
+    def load_dsm(self):
+        raise Exception("load_dsm() is not in use for Brain RSA")
+        
+    def plot_dsm(self):
+        raise Exception("plot_dsm() is not in use for Brain RSA")
 
 
 if __name__ == '__main__':
@@ -140,23 +177,38 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--source', dest='source', type=str, required=True, help='The data source: pixels, dnn or brain')
     parser.add_argument('-d', '--distance', dest='distance', type=str, required=True, help='The distance metric to use')
     parser.add_argument('-a', '--activations', dest='np_activation_data', type=str, required=False, help='DNN activations for DNN RDMs')
+    parser.add_argument('-i', '--sid', dest='sid', type=int, required=False, help='Subject ID for Brain RSA')
+    parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=False, help='Directory with brain features (Processed/?)')
     args = parser.parse_args()
     source = str(args.source)
     distance = str(args.distance)
     np_activation_data = str(args.np_activation_data)
+    sid = int(args.sid)
+    featureset = str(args.featureset)
 
     if source == 'pixels':
         rsa = RSAPixel(distance)
         rsa.compute_dsm()
         rsa.save_dsm()
+
     elif source == 'dnn':
         if np_activation_data == 'None':
             raise Exception("Activation (-a) is a required argument for DNN RSA")
         rsa = RSADNN(distance, np_activation_data)
         rsa.compute_dsm()
         rsa.save_dsm()
+
     elif source == 'brain':
-        pass
+        print '----'
+        print sid
+        print '----'
+        if sid == None:
+            raise Exception("Subject ID (-i) is a required argument for Brain RSA")
+        if featureset == 'None':
+            raise Exception("Featureset (-f) is a required argument for Brain RSA")
+        rsa = RSABrain(distance, featureset, sid)
+        rsa.compute_and_save_batch_dsm()
+
     else:
         print 'ERROR: Unknown data source %s' % source
 
