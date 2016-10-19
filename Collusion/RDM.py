@@ -17,6 +17,9 @@ class RDM:
     #: The distance metric
     distance = None
 
+    #: Flag whether to shuffle or not
+    shuffle = None
+
     #: Matrix where data samples are stored
     representation = abstractproperty()
 
@@ -29,8 +32,9 @@ class RDM:
     #: Reordering of the images from the order of stimulation into ordering by categories
     reorder_stimulation_to_categories = []
 
-    def __init__(self, distance):
+    def __init__(self, distance, shuffle):
         self.distance = distance
+        self.shuffle = shuffle
 
         # list of stimuli used for human stimulation
         stimulation_stimuli = np.loadtxt('../Intracranial/stimsequence.txt', dtype='string')
@@ -69,12 +73,16 @@ class RDMPixel(RDM):
     representation = None
     dsm = None
 
-    def __init__(self, distance):
-        RDM.__init__(self, distance)
+    def __init__(self, distance, shuffle):
+        RDM.__init__(self, distance, shuffle)
         self.representation = np.zeros((419, 51529))
         for i, fname in enumerate(os.listdir('%s/DNN/imagesdone/' % self.DATADIR)):
             self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
         self.representation = self.representation[self.reorder_dnn_to_categories]
+
+        if self.shuffle:
+            new_order = np.random.permutation(self.reorder_dnn_to_categories)
+            self.representation = self.representation[new_order]
 
     def compute_dsm(self):
         self.dsm = scipydist.squareform(scipydist.pdist(self.representation, self.distance))
@@ -99,14 +107,18 @@ class RDMDNN(RDM):
     dsm = {}
     layers = None
 
-    def __init__(self, distance, np_activation_data):
-        RDM.__init__(self, distance)
+    def __init__(self, distance, np_activation_data, shuffle):
+        RDM.__init__(self, distance, shuffle)
 
         self.layers = os.listdir('%s/DNN/activations/%s' % (self.CODEDIR, np_activation_data))
         self.representation = {}
         for layer in self.layers:
             self.representation[layer] = np.load('%s/DNN/activations/%s/%s/activations.npy' % (self.CODEDIR, np_activation_data, layer))
             self.representation[layer] = self.representation[layer][self.reorder_dnn_to_categories]
+
+            if self.shuffle:
+                new_order = np.random.permutation(self.reorder_dnn_to_categories)
+                self.representation[layer] = self.representation[layer][new_order]
 
     def compute_dsm(self):
         for layer in self.layers:
@@ -137,14 +149,18 @@ class RDMBrain(RDM):
     subject = {}
     suffix = ''
 
-    def __init__(self, distance, featureset, sid):
-        RDM.__init__(self, distance)
+    def __init__(self, distance, featureset, sid, shuffle):
+        RDM.__init__(self, distance, shuffle)
         subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
         sfile = subjects[sid]
         s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, featureset, sfile))
         self.subject['data'] = s['s']['data'][0][0]
         self.subject['name'] = s['s']['name'][0][0][0]
         self.representation = self.subject['data'][self.reorder_stimulation_to_categories]
+
+        if self.shuffle:
+        new_order = np.random.permutation(self.reorder_stimulation_to_categories)
+        self.representation = self.representation[new_order]
 
     def compute_and_save_batch_dsm(self):
         nstim = self.representation.shape[0]
@@ -176,27 +192,29 @@ class RDMBrain(RDM):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Compute RDM matrices')
-    parser.add_argument('-s', '--source', dest='source', type=str, required=True, help='The data source: pixels, dnn or brain')
+    parser.add_argument('-t', '--type', dest='datatype', type=str, required=True, help='The data source: pixels, dnn or brain')
     parser.add_argument('-d', '--distance', dest='distance', type=str, required=True, help='The distance metric to use')
     parser.add_argument('-a', '--activations', dest='np_activation_data', type=str, required=False, help='DNN activations for DNN RDMs')
     parser.add_argument('-i', '--sid', dest='sid', type=int, required=False, help='Subject ID for Brain RDM')
     parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=False, help='Directory with brain features (Processed/?)')
+    parser.add_argument('-s', '--shuffle', dest='shuffle', type=str, required=False, default=False, help='Whether to shuffle data for a permutation test')
     args = parser.parse_args()
-    source = str(args.source)
+    datatype = str(args.datatype)
     distance = str(args.distance)
     np_activation_data = str(args.np_activation_data)
     sid = int(args.sid) if args.sid is not None else None
     featureset = str(args.featureset)
+    shuffle = bool(args.shuffle == 'True')
 
     if source == 'pixels':
-        rdm = RDMPixel(distance)
+        rdm = RDMPixel(distance, shuffle)
         rdm.compute_dsm()
         rdm.save_dsm()
 
     elif source == 'dnn':
         if np_activation_data == 'None':
             raise Exception("Activation (-a) is a required argument for DNN RDM")
-        rdm = RDMDNN(distance, np_activation_data)
+        rdm = RDMDNN(distance, np_activation_data, shuffle)
         rdm.compute_dsm()
         rdm.save_dsm()
 
@@ -205,7 +223,7 @@ if __name__ == '__main__':
             raise Exception("Subject ID (-i) is a required argument for Brain RDM")
         if featureset == 'None':
             raise Exception("Featureset (-f) is a required argument for Brain RDM")
-        rdm = RDMBrain(distance, featureset, sid)
+        rdm = RDMBrain(distance, featureset, sid, shuffle)
         rdm.compute_and_save_batch_dsm()
 
     else:
