@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 import os
 import numpy as np
+import scipy.io as sio
 from scipy.ndimage import imread
 from scipy.spatial import distance as scipydist
 import argparse
@@ -146,8 +147,8 @@ class RSABrain(RSA):
         self.representation = self.subject['data'][self.reorder_stimulation_to_categories]
 
     def compute_and_save_batch_dsm(self):
-        nstim = representation.shape[0]
-        nprobes = representation.shape[1]
+        nstim = self.representation.shape[0]
+        nprobes = self.representation.shape[1]
 
         if nprobes == 0:
             sm = np.zeros((nstim, nstim))
@@ -155,7 +156,8 @@ class RSABrain(RSA):
             return None
 
         for p in range(nprobes):
-            sm = scipydist.squareform(scipydist.pdist(representation[:, p].reshape((nstim, 1)), self.distance))
+            print 'Processing %s probe %d' % (self.subject['name'], p)
+            sm = scipydist.squareform(scipydist.pdist(self.representation[:, p].reshape((nstim, 1)), self.distance))
             np.savetxt('%s/RSA/%s%s/numbers/brain-%s-%d.txt' % (self.DATADIR, self.distance, self.suffix, self.subject['name'], p), sm, fmt='%.3f')
 
     def compute_dsm(self):
@@ -183,7 +185,7 @@ if __name__ == '__main__':
     source = str(args.source)
     distance = str(args.distance)
     np_activation_data = str(args.np_activation_data)
-    sid = int(args.sid)
+    sid = int(args.sid) if args.sid is not None else None
     featureset = str(args.featureset)
 
     if source == 'pixels':
@@ -199,10 +201,7 @@ if __name__ == '__main__':
         rsa.save_dsm()
 
     elif source == 'brain':
-        print '----'
-        print sid
-        print '----'
-        if sid == None:
+        if sid is None:
             raise Exception("Subject ID (-i) is a required argument for Brain RSA")
         if featureset == 'None':
             raise Exception("Featureset (-f) is a required argument for Brain RSA")
