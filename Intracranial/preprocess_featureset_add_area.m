@@ -1,6 +1,6 @@
 % paramters
-indata = 'meangamma_bipolar_noscram_artif_responsive';
-outdata = 'meangamma_bipolar_noscram_artif_responsive_brodmann';
+indata = 'meangamma_bipolar_noscram_artif';
+outdata = 'meangamma_bipolar_noscram_artif_brodmann';
 
 % load libraries
 addpath('lib/mni2name')
