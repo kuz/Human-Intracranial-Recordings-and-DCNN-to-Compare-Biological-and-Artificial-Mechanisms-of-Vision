@@ -60,11 +60,11 @@ class RDM:
 
         # create the directory to store results
         self.OUTDIR = '%s/RSA/%s.%s' % (self.DATADIR, self.featureset, self.distance)
-        if os.direxists(self.OUTDIR):
-            raise Exception("Directory %s already exists! Drop or move it manually to avoid data loss.")
-        else:
+        try:
             os.mkdir(self.OUTDIR)
             os.mkdir('%s/numbers' % self.OUTDIR)
+        except:
+            print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
         
 
     @abstractmethod
@@ -164,7 +164,7 @@ class RDMBrain(RDM):
     suffix = ''
 
     def __init__(self, distance, featureset, sid, shuffle):
-        RDM.__init__(self, distance, shuffle)
+        RDM.__init__(self, distance, featureset, shuffle)
         subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
         sfile = subjects[sid]
         s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, featureset, sfile))

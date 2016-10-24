@@ -2,7 +2,7 @@
 
 # parameters
 source ~/Python/bin/activate
-FEATURESET=meangamma_bipolar_noscram_artif_responsive_brodmann
+FEATURESET=meangamma_bipolar_noscram_artif_brodmann_resppositive
 DISTANCE=euclidean
 
 # pixels
