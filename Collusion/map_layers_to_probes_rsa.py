@@ -29,11 +29,11 @@ sname = subjects[sid].split('.')[0]
 layers = ['pixels', 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 dnn_dsm = {}
 for layer in layers:
-    dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s%s/numbers/dnn-%s.txt' % (dist, suffix, layer))
+    dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s.%s%s/numbers/dnn-%s.txt' % (featureset, dist, suffix, layer))
 
 # load brain response dissimilarity matrices
 brain_dsm = {}
-listing = glob.glob('../../Data/RSA/%s%s/numbers/brain-%s-*.txt' % (dist, suffix, sname))
+listing = glob.glob('../../Data/RSA/%s.%s%s/numbers/brain-%s-*.txt' % (featureset, dist, suffix, sname))
 for pid, filename in enumerate(listing):
     brain_dsm[pid] = np.loadtxt(filename)
 
@@ -70,5 +70,5 @@ for lid, layer in enumerate(layers):
 maps[np.isnan(maps)] = 0.0
 
 # store the scores
-np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/rsa_%s%s_%s/%s.txt' % (dist, suffix, featureset, sname), maps, fmt='%.4f')
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s/%s.txt' % (featureset, dist, suffix, sname), maps, fmt='%.4f')
 
