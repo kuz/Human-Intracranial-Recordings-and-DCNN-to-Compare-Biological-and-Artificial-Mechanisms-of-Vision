@@ -4,7 +4,6 @@ import numpy as np
 import argparse
 from scipy.stats import spearmanr, pearsonr
 from sklearn.preprocessing import MinMaxScaler
-from Plotter import Plotter
 
 
 class RSAScorer:
@@ -40,19 +39,14 @@ class RSAScorer:
     #: Final results
     scores = None
 
-    def __ini__(self, featureset, distance, sid):
+    def __init__(self, featureset, distance, sid):
         self.featureset = featureset
         self.distance = distance
+        self.sid = sid
 
         # read list of subjects
         self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
-        sname = subjects[sid].split('.')[0]
-
-        # load current subject data
-        s = sio.loadmat('../../Data/Intracranial/Processed/%s/%s' % (featureset, sfile))
-
-        self.subject['name'] = s['s']['name'][0][0][0]
-        self.subject['areas'] = np.ravel(s['s']['probes'][0][0][0][0][3])
+        self.sname = self.subjects[self.sid].split('.')[0]
 
         #if shuffle:
             #suffix = '.shuffled'
@@ -64,7 +58,7 @@ class RSAScorer:
 
         # load brain response dissimilarity matrices
         listing = glob.glob('%s/RSA/%s.%s%s/numbers/brain-%s-*.txt' %
-                            (self.DATADIR, self.featureset, self.distance, self.suffix, self.subject['name']))
+                            (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname))
         for pid, filename in enumerate(listing):
             self.brain_dsm[pid] = np.loadtxt(filename)
 
@@ -80,29 +74,29 @@ class RSAScorer:
         nstim = self.brain_dsm[0].shape[0]
         self.scores = np.empty((nprobes, len(self.layers)))
         for lid, layer in enumerate(self.layers):
-        for pid in range(nprobes):
-            dnn = mms.fit_transform(self.dnn_dsm[layer])
-            brain = mms.fit_transform(self.brain_dsm[pid])
+            for pid in range(nprobes):
+                dnn = mms.fit_transform(self.dnn_dsm[layer])
+                brain = mms.fit_transform(self.brain_dsm[pid])
 
-            if scope == 'matrix':
-                r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
-                if threshold < 1.0:
-                    if r > 0.0 and p <= threshold:
-                        self.scores[pid, lid] = r 
-                else:
-                    self.scores[pid, lid] = r 
-
-            if scope == 'image':
-                score = 0
-                for i in range(nstim):
-                    r, p = spearmanr(dnn[i, :], brain[i, :])
-
+                if scope == 'matrix':
+                    r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
                     if threshold < 1.0:
                         if r > 0.0 and p <= threshold:
-                            score += r
+                            self.scores[pid, lid] = r 
                     else:
-                        score += r
-                self.scores[pid, lid] = score / float(nstim)
+                        self.scores[pid, lid] = r 
+
+                if scope == 'image':
+                    score = 0
+                    for i in range(nstim):
+                        r, p = spearmanr(dnn[i, :], brain[i, :])
+
+                        if threshold < 1.0:
+                            if r > 0.0 and p <= threshold:
+                                score += r
+                        else:
+                            score += r
+                    self.scores[pid, lid] = score / float(nstim)
 
         self.scores[np.isnan(self.scores)] = 0.0
 
@@ -110,11 +104,11 @@ class RSAScorer:
 
     def store_rdm_correlation_scores(self):
         np.savetxt('%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s/%s.txt' %
-                   (self.DATADIR, self.featureset, self.distance, self.suffix, self.subject['name']), self.scores, fmt='%.4f')
+                   (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname), self.scores, fmt='%.4f')
 
     def load_rdm_correlation_scores(self):
         self.scores = np.loadtxt('%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s/%s.txt' %
-                                 (self.DATADIR, self.featureset, self.distance, self.suffix, self.subject['name'])
+                                 (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname))
 
 
 if __name__ == '__main__':
