@@ -10,9 +10,12 @@ class RSAScorer:
 
     #: Paths
     DATADIR = '../../Data'
+    OUTDIR = None
 
-    #: Set of extracted features we try to estimate and map to
+    #: Paramters to compute on: dataeset, method, significance levels
     featureset = None
+    scope = None
+    threshold = None
 
     #: List of subjects
     subjects = None
@@ -39,10 +42,12 @@ class RSAScorer:
     #: Final results
     scores = None
 
-    def __init__(self, featureset, distance, sid):
+    def __init__(self, featureset, distance, sid, scope, threshold):
         self.featureset = featureset
         self.distance = distance
         self.sid = sid
+        self.scope = scope
+        self.threshold = threshold
 
         # read list of subjects
         self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
@@ -62,7 +67,14 @@ class RSAScorer:
         for pid, filename in enumerate(listing):
             self.brain_dsm[pid] = np.loadtxt(filename)
 
-    def compute_rdm_correlation_scores(self, scope, threshold):
+        # create a directory
+        self.OUTDIR = '%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s.%s%s' % (self.DATADIR, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        try:
+            os.mkdir(self.OUTDIR)
+        except:
+            print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
+
+    def compute_rdm_correlation_scores(self):
         """
         @param scope: either 'matrix' or 'image' to indicate whethet correlation is computed
                       between whole matrices or image-by-image and then averaged
@@ -78,21 +90,21 @@ class RSAScorer:
                 dnn = mms.fit_transform(self.dnn_dsm[layer])
                 brain = mms.fit_transform(self.brain_dsm[pid])
 
-                if scope == 'matrix':
+                if self.scope == 'matrix':
                     r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
-                    if threshold < 1.0:
-                        if r > 0.0 and p <= threshold:
+                    if self.threshold < 1.0:
+                        if r > 0.0 and p <= self.threshold:
                             self.scores[pid, lid] = r 
                     else:
                         self.scores[pid, lid] = r 
 
-                if scope == 'image':
+                if self.scope == 'image':
                     score = 0
                     for i in range(nstim):
                         r, p = spearmanr(dnn[i, :], brain[i, :])
 
-                        if threshold < 1.0:
-                            if r > 0.0 and p <= threshold:
+                        if self.threshold < 1.0:
+                            if r > 0.0 and p <= self.threshold:
                                 score += r
                         else:
                             score += r
@@ -103,12 +115,10 @@ class RSAScorer:
         return self.scores
 
     def store_rdm_correlation_scores(self):
-        np.savetxt('%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s/%s.txt' %
-                   (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname), self.scores, fmt='%.4f')
+        np.savetxt('%s/%s.txt' % (self.OUTDIR, self.sname), self.scores, fmt='%.4f')
 
     def load_rdm_correlation_scores(self):
-        self.scores = np.loadtxt('%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s/%s.txt' %
-                                 (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname))
+        self.scores = np.loadtxt('%s/%s.txt' % (self.OUTDIR, self.sname))
 
 
 if __name__ == '__main__':
@@ -129,7 +139,7 @@ if __name__ == '__main__':
     onwhat = str(args.onwhat)
     threshold = float(args.threshold)
 
-    rsascorer = RSAScorer(featureset, distance, sid)
-    rsascorer.compute_rdm_correlation_scores(onwhat, threshold)
+    rsascorer = RSAScorer(featureset, distance, sid, onwhat, threshold)
+    rsascorer.compute_rdm_correlation_scores()
     rsascorer.store_rdm_correlation_scores()
 
