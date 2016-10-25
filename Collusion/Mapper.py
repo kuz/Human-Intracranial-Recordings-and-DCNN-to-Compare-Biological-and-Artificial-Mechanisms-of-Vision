@@ -77,3 +77,25 @@ class Mapper:
         plotter = ()
         filename = '../../Outcome/Mapper/%s_%s.%s%s.%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
         plotter.xlayer_yarea_zscore(filename, self.nareas, self.nlayers, n_sig_per_arealayer, n_tot_per_arealayer, score_per_arealayer_normalized)
+
+
+if __name__ == '__main__':
+
+def __init__(self, backbone, featureset, distance, suffix, scope, threshold):
+
+    parser = argparse.ArgumentParser(description='Map areas to layers and plot aggregated scoring heatmap')
+    parser.add_argument('-b', '--backbone', dest='backbone', type=str, required=True, help='rsa or linear')
+    parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory with brain features (Processed/?)')
+    parser.add_argument('-d', '--distance', dest='distance', type=str, required=True, help='The distance metric to use')
+    parser.add_argument('-o', '--onwhat', dest='onwhat', type=str, required=True, help='image or matrix depending on which you to compute the correlation on')
+    parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=True, help='Significance level a score must have to be counter (1.0 to store all)')
+    
+    args = parser.parse_args()
+    backbone = bool(args.backbone)
+    featureset = str(args.featureset)
+    distance = str(args.distance)
+    onwhat = str(args.onwhat)
+    threshold = float(args.threshold)
+
+    mapper = Mapper(featureset, distance, sid, onwhat, threshold)
+    mapper.compute_and_plot_area_mapping()
