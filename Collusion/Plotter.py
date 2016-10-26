@@ -6,8 +6,8 @@ from matplotlib import pylab as plt
 class Plotter:
 
     @staticmethod
-    def xlayer_yarea_zscore(self, filename, nareas, nlayers, n_sig_in_area, n_tot_in_area, data):
-        
+    def xlayer_yarea_zscore(filename, nareas, nlayers, n_sig_in_area, n_tot_in_area, data):
+       
         # generate Y axis labels
         ylabels = []
         for aid in range(nareas):    
