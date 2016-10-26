@@ -191,6 +191,9 @@ class RDMBrain(RDM):
             np.savetxt('%s%s/numbers/brain-%s-%d.txt' % (self.OUTDIR, self.suffix, self.subject['name'], p), sm, fmt='%.3f')
 
     def compute_dsm(self, pid):
+        if self.shuffle:
+            new_order = np.random.permutation(range(self.representation.shape[0]))
+            self.representation = self.representation[new_order]
         nstim = self.representation.shape[0]
         return scipydist.squareform(scipydist.pdist(self.representation[:, pid].reshape((nstim, 1)), self.distance))
 

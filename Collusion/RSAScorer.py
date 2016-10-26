@@ -74,6 +74,31 @@ class RSAScorer:
         except:
             print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
 
+    @staticmethod
+    def compute_one_correlation_score(dnn, brain, scope, threshold):
+
+        if scope == 'matrix':
+            r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
+            if threshold < 1.0:
+                if r > 0.0 and p <= threshold:
+                    return r
+                else:
+                    return 0.0
+            else:
+                return r 
+
+        if scope == 'image':
+            nrows = brain.shape[0]
+            score = 0
+            for i in range(nrows):
+                r, p = spearmanr(dnn[i, :], brain[i, :])
+                if threshold < 1.0:
+                    if r > 0.0 and p <= threshold:
+                        score += r
+                else:
+                    score += r
+            return score / float(nrows)
+
     def compute_rdm_correlation_scores(self):
         """
         @param scope: either 'matrix' or 'image' to indicate whethet correlation is computed
@@ -84,12 +109,14 @@ class RSAScorer:
         mms = MinMaxScaler()
         nprobes = len(self.brain_dsm)
         nstim = self.brain_dsm[0].shape[0]
-        self.scores = np.empty((nprobes, len(self.layers)))
+        self.scores = np.zeros((nprobes, len(self.layers)))
         for lid, layer in enumerate(self.layers):
             for pid in range(nprobes):
                 dnn = mms.fit_transform(self.dnn_dsm[layer])
                 brain = mms.fit_transform(self.brain_dsm[pid])
+                self.scores[pid, lid] = RSAScorer.compute_one_correlation_score(dnn, brain, self.scope, self.threshold)
 
+                """
                 if self.scope == 'matrix':
                     r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
                     if self.threshold < 1.0:
@@ -109,6 +136,7 @@ class RSAScorer:
                         else:
                             score += r
                     self.scores[pid, lid] = score / float(nstim)
+                """
 
         self.scores[np.isnan(self.scores)] = 0.0
 
