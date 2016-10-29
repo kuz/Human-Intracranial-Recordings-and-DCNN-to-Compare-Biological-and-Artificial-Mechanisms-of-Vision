@@ -76,7 +76,13 @@ class RSAScorer:
 
     @staticmethod
     def compute_one_correlation_score(dnn, brain, scope, threshold):
+        
+        # scale the data
+        mms = MinMaxScaler()
+        dnn = mms.fit_transform(dnn)
+        brain = mms.fit_transform(brain)
 
+        # whole-matrix score
         if scope == 'matrix':
             r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
             if threshold < 1.0:
@@ -87,6 +93,7 @@ class RSAScorer:
             else:
                 return r 
 
+        # per-image score
         if scope == 'image':
             nrows = brain.shape[0]
             score = 0
@@ -99,22 +106,20 @@ class RSAScorer:
                     score += r
             return score / float(nrows)
 
-    def compute_rdm_correlation_scores(self):
+    def compute_all_correlation_scores(self):
         """
         @param scope: either 'matrix' or 'image' to indicate whethet correlation is computed
                       between whole matrices or image-by-image and then averaged
         @param threshold: signicance threshold a correlation must have to be stored as a result
                           use None to store all of the scores for the permutation test
         """
-        mms = MinMaxScaler()
         nprobes = len(self.brain_dsm)
-        nstim = self.brain_dsm[0].shape[0]
+        #nstim = self.brain_dsm[0].shape[0]
         self.scores = np.zeros((nprobes, len(self.layers)))
         for lid, layer in enumerate(self.layers):
             for pid in range(nprobes):
-                dnn = mms.fit_transform(self.dnn_dsm[layer])
-                brain = mms.fit_transform(self.brain_dsm[pid])
-                self.scores[pid, lid] = RSAScorer.compute_one_correlation_score(dnn, brain, self.scope, self.threshold)
+                self.scores[pid, lid] = RSAScorer.compute_one_correlation_score(self.dnn_dsm[layer], self.brain_dsm[pid],
+                                                                                self.scope, self.threshold)
 
                 """
                 if self.scope == 'matrix':
@@ -142,10 +147,10 @@ class RSAScorer:
 
         return self.scores
 
-    def store_rdm_correlation_scores(self):
+    def store_all_correlation_scores(self):
         np.savetxt('%s/%s.txt' % (self.OUTDIR, self.sname), self.scores, fmt='%.4f')
 
-    def load_rdm_correlation_scores(self):
+    def load_all_correlation_scores(self):
         self.scores = np.loadtxt('%s/%s.txt' % (self.OUTDIR, self.sname))
 
 
@@ -168,6 +173,6 @@ if __name__ == '__main__':
     threshold = float(args.threshold)
 
     rsascorer = RSAScorer(featureset, distance, sid, onwhat, threshold)
-    rsascorer.compute_rdm_correlation_scores()
-    rsascorer.store_rdm_correlation_scores()
+    rsascorer.compute_all_correlation_scores()
+    rsascorer.store_all_correlation_scores()
 

@@ -45,6 +45,7 @@ class RDM:
         stimulation_stimuli = np.loadtxt('../Intracranial/stimsequence.txt', dtype='string')
 
         # create the reordering from stimulation order to order by category
+        self.reorder_stimulation_to_categories = []
         for s in sorted(set(stimulation_stimuli)):
             for i in np.where(stimulation_stimuli == s)[0]:
                 self.reorder_stimulation_to_categories.append(i)
@@ -54,6 +55,7 @@ class RDM:
         dnn_stimuli = np.array([x[0].split('.')[0] for x in dnn_stimuli])
 
         # create the reordering from dnn order to order by category
+        self.reorder_dnn_to_categories = []
         for s in sorted(stimulation_stimuli):
             for i in np.where(dnn_stimuli == s)[0]:
                 self.reorder_dnn_to_categories.append(i)
