@@ -121,28 +121,6 @@ class RSAScorer:
                 self.scores[pid, lid] = RSAScorer.compute_one_correlation_score(self.dnn_dsm[layer], self.brain_dsm[pid],
                                                                                 self.scope, self.threshold)
 
-                """
-                if self.scope == 'matrix':
-                    r, p = spearmanr(np.ravel(dnn), np.ravel(brain))
-                    if self.threshold < 1.0:
-                        if r > 0.0 and p <= self.threshold:
-                            self.scores[pid, lid] = r 
-                    else:
-                        self.scores[pid, lid] = r 
-
-                if self.scope == 'image':
-                    score = 0
-                    for i in range(nstim):
-                        r, p = spearmanr(dnn[i, :], brain[i, :])
-
-                        if self.threshold < 1.0:
-                            if r > 0.0 and p <= self.threshold:
-                                score += r
-                        else:
-                            score += r
-                    self.scores[pid, lid] = score / float(nstim)
-                """
-
         self.scores[np.isnan(self.scores)] = 0.0
 
         return self.scores
