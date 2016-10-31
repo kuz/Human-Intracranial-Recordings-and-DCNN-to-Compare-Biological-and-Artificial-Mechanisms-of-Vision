@@ -9,6 +9,7 @@ class Mapper:
     #: Paths
     DATADIR = '../../Data'
     SCOREDIR = None
+    PERMDIR = None
 
     #: List of subjects
     subjects = None
@@ -36,12 +37,14 @@ class Mapper:
         self.statistic = statistic
 
         self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
         self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset))
+        self.subjects = self.subjects[:3]
     
     def _collect_scores(self):
         allscores = {}
         for sfile in self.subjects:
-            s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, featureset, sfile))
+            s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, self.featureset, sfile))
             sname = s['s']['name'][0][0][0]
             areas = np.ravel(s['s']['probes'][0][0][0][0][3])
             if len(areas) == 0:
@@ -52,10 +55,35 @@ class Mapper:
             allscores[sname] = {'scores': scores, 'areas': areas}
         return allscores
 
-    def compute_and_plot_area_mapping(self):
+    def _compute_pvals(self):
+
+        # obtain true scores
+        scores = self._collect_scores()
+
+        # compute p-values based on permutation scores
+        pvals = {}
+        for sfile in self.subjects:
+            s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, self.featureset, sfile))
+            sname = s['s']['name'][0][0][0]
+            areas = np.ravel(s['s']['probes'][0][0][0][0][3])
+            pvals[sname] = np.ones(scores[sname]['scores'].shape)
+            for pid in range(len(areas)):
+                print 'Processing %s probe %d' % (sname, pid)
+                permutation_scores = np.loadtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
+                pvals[sname][pid] = np.sum(permutation_scores >= scores[sname]['scores'][pid], axis=0) / float(permutation_scores.shape[0])
+
+        return pvals
+
+    def compute_and_plot_area_mapping(self, filter_by_permutation=False):
 
         # load the correlation scores
         scores = self._collect_scores()
+
+        # filter scores by permutation test results
+        if filter_by_permutation:
+            pvals = _compute_pvals()
+            for sname in scores.keys():
+                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.00001)
 
         # prepare matices to store resutls
         score_per_arealayer = np.zeros((self.nareas, self.nlayers))
@@ -103,7 +131,11 @@ class Mapper:
         score_per_arealayer_normalized = np.nan_to_num(score_per_arealayer_normalized)
 
         # plot
-        filename = '../../Outcome/Mapper/%s_%s.%s%s.%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        if filter_by_permutation:
+            permfiltered = 'permfiltered'
+        else:
+            permfiltered = ''
+        filename = '../../Outcome/Mapper/%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
         Plotter.xlayer_yarea_zscore(filename, self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized)
 
 
@@ -116,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--onwhat', dest='onwhat', type=str, required=True, help='image or matrix depending on which you to compute the correlation on')
     parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=True, help='Significance level a score must have to be counter (1.0 to store all)')
     parser.add_argument('-s', '--statistic', dest='statistic', type=str, required=True, help='Type of score to compute when aggregating: varexp, corr')
+    parser.add_argument('-p', '--permfilter', dest='permfilter', type=str, required=True, help='Whether to filter the results with permutation test results')
     
     args = parser.parse_args()
     backbone = str(args.backbone)
@@ -125,6 +158,7 @@ if __name__ == '__main__':
     threshold = float(args.threshold)
     statistic = str(args.statistic)
     suffix = ''
+    permfilter = bool(args.permfilter == 'True')
 
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
-    mapper.compute_and_plot_area_mapping()
+    mapper.compute_and_plot_area_mapping(permfilter)
