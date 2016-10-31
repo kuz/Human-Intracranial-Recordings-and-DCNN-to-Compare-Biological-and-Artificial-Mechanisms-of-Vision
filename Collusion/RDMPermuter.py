@@ -1,4 +1,5 @@
 import os
+import argparse
 import numpy as np
 from RDM import RDMPixel, RDMDNN, RDMBrain
 from RSAScorer import RSAScorer
@@ -7,7 +8,7 @@ import traceback
 class RDMPermuter:
 
     #: Number of runs per iteration
-    nruns = 100
+    nruns = 100000
 
     #: Paths
     DATADIR = '../../Data'
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     scope = str(args.onwhat)
     threshold = float(args.threshold)
 
-    permuter = RDMPermuter(sid, pid, backbone, featureset, distance, suffix, scope, threshold):
+    permuter = RDMPermuter(sid, pid, backbone, featureset, distance, suffix, scope, threshold)
     permuter.run()
 
 
