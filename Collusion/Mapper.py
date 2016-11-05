@@ -39,7 +39,6 @@ class Mapper:
         self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
         self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
         self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset))
-        self.subjects = self.subjects[:3]
     
     def _collect_scores(self):
         allscores = {}
@@ -63,9 +62,18 @@ class Mapper:
         # compute p-values based on permutation scores
         pvals = {}
         for sfile in self.subjects:
+            
+            # load the user data
             s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, self.featureset, sfile))
             sname = s['s']['name'][0][0][0]
             areas = np.ravel(s['s']['probes'][0][0][0][0][3])
+
+            # check that this user has any probes
+            if scores[sname]['scores'] is None:
+                pvals[sname] = None
+                continue
+            
+            # compute pvalues for this users's probes
             pvals[sname] = np.ones(scores[sname]['scores'].shape)
             for pid in range(len(areas)):
                 print 'Processing %s probe %d' % (sname, pid)
@@ -79,11 +87,9 @@ class Mapper:
         # load the correlation scores
         scores = self._collect_scores()
 
-        # filter scores by permutation test results
+        # compute pvalues if filtering my permutataion test is requested
         if filter_by_permutation:
-            pvals = _compute_pvals()
-            for sname in scores.keys():
-                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.00001)
+            pvals = self._compute_pvals()
 
         # prepare matices to store resutls
         score_per_arealayer = np.zeros((self.nareas, self.nlayers))
@@ -96,6 +102,10 @@ class Mapper:
             # skip subjects with no probes
             if scores[sname]['scores'] is None:
                 continue
+
+            # filter scores by permutation test results
+            if filter_by_permutation:
+                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.00001)
 
             for aid in range(self.nareas):
                 
