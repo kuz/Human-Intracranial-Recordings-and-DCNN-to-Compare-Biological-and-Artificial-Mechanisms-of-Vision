@@ -7,6 +7,7 @@ from sklearn import linear_model
 from sklearn import cross_validation
 from sklearn.decomposition import PCA
 from scipy.stats import spearmanr
+from scipy.ndimage import imread
 import multiprocessing
 from joblib import Parallel, delayed
 import argparse
@@ -24,9 +25,7 @@ featureset = str(args.featureset)
 
 # parameters
 print 'Mapping subject %d represented with "%s" to %s DNN activations' % (sid, featureset, np_activation_data)
-#ncores = multiprocessing.cpu_count()
 ncores = 6
-print "Working with %d CPUs" % ncores
 
 def scan_alpha(alphas, n_iter, layer_activity_all, probe_responses_all, n_cv):
     max_r2 = -1.0
@@ -34,7 +33,6 @@ def scan_alpha(alphas, n_iter, layer_activity_all, probe_responses_all, n_cv):
     for a in alphas:
         clf = linear_model.Ridge(alpha=a, max_iter=n_iter)
         r2 = np.mean(cross_validation.cross_val_score(clf, layer_activity_all, probe_responses_all, cv=n_cv))
-        #print 'alpha %f gave %.4f' % (a, r2)
         if r2 >= max_r2:
             best_alpha = a
             max_r2 = r2
@@ -69,16 +67,6 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
     except:
         print 'ERROR: PCA did not converge. Skipping the probe'
         return (layer, pid, np.zeros(n_runs))
-
-    # sPCA
-    #s = layer_activity_all.T * np.matrix(probe_responses_all).T
-    #n = np.sqrt(np.sum(layer_activity_all**2, axis=0)).T
-    #sn = np.ravel(s / np.matrix(n).T)
-    #sn = np.nan_to_num(sn)
-    #keep_features = np.where(sn > np.mean(sn[sn > 0.0]))[0]
-    #layer_activity_all_th = layer_activity_all[:, keep_features]
-    #pca = PCA(n_components=100)
-    #layer_activity_all = pca.fit_transform(layer_activity_all_th)
 
     # parameter search
     # http://scikit-learn.org/stable/auto_examples/linear_model/plot_lasso_model_selection.html
@@ -123,7 +111,8 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
 # prepare lists of probe coordinates for each layer
 print 'Loading list of layers...'
 layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
-#layers = layers[6:8]
+layers = ['pixels'] + layers
+
 assignments = {}
 for layer in layers:
     assignments[layer] = []
@@ -132,7 +121,12 @@ for layer in layers:
 print 'Loading DNN activations...'
 activations = {}
 for layer in layers:
-    activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
+    if layer == 'pixels':
+        activations[layer] = np.zeros((419, 51529))
+        for i, fname in enumerate(os.listdir('../../Data/DNN/imagesdone/')):
+            activations[layer][i] = np.ravel(imread('../../Data/DNN/imagesdone/%s' % fname))
+    else:
+        activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
 
 # load list of stimuli in the order they were presented to DNN
 print 'Loading DNN stimuli...'
@@ -195,4 +189,4 @@ for record in results:
     output[pid, layerid] = np.mean(record[2])
 
 # store probe to layer mapping for the subject
-np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/%s/%s.txt' % (featureset, subject['name']), output, fmt='%.4f')
+np.savetxt('../../Data/Intracranial/Probe_to_Layer_Maps/lp_%s/%s.txt' % (featureset, subject['name']), output, fmt='%.4f')
