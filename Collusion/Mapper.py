@@ -128,12 +128,12 @@ class Mapper:
                         raise Exception('Unknown statistic %s' % self.statistic)
                     score_per_arealayer[aid, lid] += sig_score
 
-        if self.statistic == 'corr':
-            pass
-        elif self.statistic == 'varexp':
-            score_per_arealayer *= 100
-        else:
-            raise Exception('Unknown statistic %s' % self.statistic)
+        #if self.statistic == 'corr':
+        #    pass
+        #elif self.statistic == 'varexp':
+        #    score_per_arealayer *= 100
+        #else:
+        #    raise Exception('Unknown statistic %s' % self.statistic)
 
         # normalize by the number of significant probes in an area
         score_per_arealayer_normalized = score_per_arealayer / np.tile(n_sig_per_area, (self.nlayers, 1)).T
@@ -172,3 +172,5 @@ if __name__ == '__main__':
 
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
     mapper.compute_and_plot_area_mapping(permfilter)
+
+    print 'All done.'
