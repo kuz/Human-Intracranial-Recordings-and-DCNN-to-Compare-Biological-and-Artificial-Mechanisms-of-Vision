@@ -1,7 +1,6 @@
 import os
 import time
 import numpy as np
-Add a comment to this line
 import scipy.io as sio
 from sklearn import linear_model
 from sklearn import cross_validation
