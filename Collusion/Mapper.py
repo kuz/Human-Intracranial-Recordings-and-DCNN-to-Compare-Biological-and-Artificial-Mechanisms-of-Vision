@@ -52,10 +52,10 @@ class Mapper:
             s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, self.featureset, sfile))
             sname = s['s']['name'][0][0][0]
             areas = np.ravel(s['s']['probes'][0][0][0][0][3])
-            if len(areas) == 0:
+            scores = np.loadtxt('%s/%s.txt' % (self.SCOREDIR, sname))
+            if len(areas) == 0 or len(scores) == 0:
                 scores = None
             else:
-                scores = np.loadtxt('%s/%s.txt' % (self.SCOREDIR, sname))
                 scores = scores.reshape((len(areas), self.nlayers))
             allscores[sname] = {'scores': scores, 'areas': areas}
         return allscores
@@ -166,22 +166,29 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Map areas to layers and plot aggregated scoring heatmap')
     parser.add_argument('-b', '--backbone', dest='backbone', type=str, required=True, help='rsa or linear')
     parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory with brain features (Processed/?)')
-    parser.add_argument('-d', '--distance', dest='distance', type=str, required=True, help='The distance metric to use')
-    parser.add_argument('-o', '--onwhat', dest='onwhat', type=str, required=True, help='image or matrix depending on which you to compute the correlation on')
-    parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=True, help='Significance level a score must have to be counter (1.0 to store all)')
+    parser.add_argument('-d', '--distance', dest='distance', type=str, required=False, help='The distance metric to use')
+    parser.add_argument('-o', '--onwhat', dest='onwhat', type=str, required=False, help='image or matrix depending on which you to compute the correlation on')
+    parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=False, help='Significance level a score must have to be counter (1.0 to store all)')
     parser.add_argument('-s', '--statistic', dest='statistic', type=str, required=True, help='Type of score to compute when aggregating: varexp, corr')
     parser.add_argument('-p', '--permfilter', dest='permfilter', type=str, required=True, help='Whether to filter the results with permutation test results')
-    
     args = parser.parse_args()
+
+    # check conditional requirements
+    if args.backbone == 'rsa':
+        if args.distance is None or args.onwhat is None or args.threshold is None:
+            parser.error('arguments -d, -o and -t are required with "-b rsa"')
+    
+    # parse values
     backbone = str(args.backbone)
     featureset = str(args.featureset)
     distance = str(args.distance)
     onwhat = str(args.onwhat)
-    threshold = float(args.threshold)
+    threshold = float(args.threshold) if args.threshold is not None else None
     statistic = str(args.statistic)
     suffix = ''
     permfilter = bool(args.permfilter == 'True')
 
+    # initialize and run the mapper
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
     mapper.compute_and_plot_area_mapping(permfilter)
 
