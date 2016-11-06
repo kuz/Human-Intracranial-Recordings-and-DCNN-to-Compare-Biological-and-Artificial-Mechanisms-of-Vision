@@ -36,8 +36,14 @@ class Mapper:
         self.threshold = threshold
         self.statistic = statistic
 
-        self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
-        self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        if self.backbone == 'rsa':
+            self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+            self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        elif self.backbone == 'lp':
+            self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s' % (self.DATADIR, self.backbone, self.featureset)
+            self.PERMDIR = None
+        else:
+            raise Exception('Unknown backbone %s' % self.backbone)
         self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset))
     
     def _collect_scores(self):
@@ -140,12 +146,18 @@ class Mapper:
         score_per_arealayer_normalized[np.isinf(score_per_arealayer_normalized)] = 0.0
         score_per_arealayer_normalized = np.nan_to_num(score_per_arealayer_normalized)
 
-        # plot
-        if filter_by_permutation:
-            permfiltered = 'permfiltered'
+        # add suffix to the file name if filtered by permutation test results
+        permfiltered = 'permfiltered' if filter_by_permutation else ''
+
+        # different filenames for different scoring backbone methods
+        if self.backbone == 'rsa':
+            filename = '../../Outcome/Mapper/%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+        elif self.backbone == 'lp':
+            filename = '../../Outcome/Mapper/%s_%s%s.png' % (self.backbone, self.featureset, permfiltered)
         else:
-            permfiltered = ''
-        filename = '../../Outcome/Mapper/%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+            raise Exception('Unknown backbone %s' % self.backbone)
+
+        # generate and store plot
         Plotter.xlayer_yarea_zscore(filename, self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized)
 
 
