@@ -1,5 +1,6 @@
 import os
 import argparse
+import cPickle
 import numpy as np
 import scipy.io as sio
 from Plotter import Plotter
@@ -62,6 +63,15 @@ class Mapper:
 
     def _compute_pvals(self):
 
+        # if p-value for this experiment were computed before -- reuse them
+        try:
+            with open('%s_pvals.txt' % self.PERMDIR, 'rb') as infile:
+                pvals = cPickle.load(infile)
+            print 'NOTICE: Reusing previously computed p-values'
+            return pvals
+        except:
+            pass
+
         # obtain true scores
         scores = self._collect_scores()
 
@@ -82,9 +92,13 @@ class Mapper:
             # compute pvalues for this users's probes
             pvals[sname] = np.ones(scores[sname]['scores'].shape)
             for pid in range(len(areas)):
-                print 'Processing %s probe %d' % (sname, pid)
+                print 'Computing p-value for subject %s probe %d' % (sname, pid)
                 permutation_scores = np.loadtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
                 pvals[sname][pid] = np.sum(permutation_scores >= scores[sname]['scores'][pid], axis=0) / float(permutation_scores.shape[0])
+
+        # store computed p-values for future runs
+        with open('%s_pvals.txt' % self.PERMDIR, 'wb') as outfile:
+            cPickle.dump(pvals, outfile)
 
         return pvals
 
