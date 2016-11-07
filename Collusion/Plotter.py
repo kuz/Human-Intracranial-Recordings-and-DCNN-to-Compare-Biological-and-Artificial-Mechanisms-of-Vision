@@ -25,3 +25,25 @@ class Plotter:
                 plt.text(lid, aid, ('%.3f' % data[aid, lid])[1:], va='center', ha='center', size=6)
         plt.savefig(filename, bbox_inches='tight');
         plt.clf();
+
+    @staticmethod
+    def xmni_yscore(basename, nlayers, data):
+        for lid in range(nlayers):
+            plt.figure(figsize=(10, 10), dpi=300);
+            x = data[data[:, 1] == lid, 0]
+            y = data[data[:, 1] == lid, 2]
+            plt.plot(x, y, 'o');
+            plt.legend(['Layer %d' % lid]);
+            plt.savefig('%s%d.png' % (basename, lid), bbox_inches='tight');
+            plt.clf();
+
+    @staticmethod
+    def hist_xmni_yvarexp(basename, nlayers, data):
+        for lid in range(nlayers):
+            plt.figure(figsize=(10, 10), dpi=300);
+            x = data[data[:, 1] == lid, 0]
+            plt.hist(x, 50, normed=1)
+            plt.xlim(-100, 20);
+            plt.legend(['Layer %d' % lid]);
+            plt.savefig('%s%d.png' % (basename, lid), bbox_inches='tight');
+            plt.clf();

@@ -11,6 +11,7 @@ class Mapper:
     DATADIR = '../../Data'
     SCOREDIR = None
     PERMDIR = None
+    OUTDIR = '../../Outcome'
 
     #: List of subjects
     subjects = None
@@ -165,14 +166,43 @@ class Mapper:
 
         # different filenames for different scoring backbone methods
         if self.backbone == 'rsa':
-            filename = '../../Outcome/Mapper/%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+            filename = '%s/Mapper/%s_%s.%s%s.%s%s%s.png' % (self.OUTDIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
         elif self.backbone == 'lp':
-            filename = '../../Outcome/Mapper/%s_%s%s.png' % (self.backbone, self.featureset, permfiltered)
+            filename = '%s/Mapper/%s_%s%s.png' % (self.OUTDIR, self.backbone, self.featureset, permfiltered)
         else:
             raise Exception('Unknown backbone %s' % self.backbone)
 
         # generate and store plot
         Plotter.xlayer_yarea_zscore(filename, self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized)
+
+    def compute_and_plot_single_mni_score(self, filter_by_permutation=False):
+
+        # load the correlation scores
+        scores = self._collect_scores()
+
+        # compute pvalues if filtering my permutataion test is requested
+        if filter_by_permutation:
+            pvals = self._compute_pvals()
+
+        # collect all probes into a matrix with each row having [2nd MNI, layer, rho]
+        allprobes = np.zeros((0, 3))
+        for sname in scores:
+            for pid in range(len(scores[sname]['areas'])):
+                if scores[sname]['areas'][pid] in [17, 18, 19, 37, 20]:
+                    for lid in range(nlayers):
+                        if not filter_by_permutation or pvals[sname][pid, lid] <= 0.001:
+                            record = np.array([scores[sname]['mni'][pid, 1], lid, scores[sname]['rhos'][pid, lid]**2]).reshape((1, 3))
+                            allprobes = np.concatenate((allprobes, record))
+
+        # drop record with static being 0
+        allprobes = allprobes[allprobes[:, 2] != 0]
+
+        # sort probes by sagittalcoordinate
+        allprobes = allprobes[allprobes[:,0].argsort()]
+
+        # generate and store plot
+        filename = '%s/Mapper/single_xmni_yscore_%s_%s%s.png' % (self.OUTDIR, self.backbone, self.featureset, permfiltered)
+        Plotter.xmni_yscore(filename, self.nlayers, allprobes)
 
 
 if __name__ == '__main__':
@@ -185,6 +215,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=False, help='Significance level a score must have to be counter (1.0 to store all)')
     parser.add_argument('-s', '--statistic', dest='statistic', type=str, required=True, help='Type of score to compute when aggregating: varexp, corr')
     parser.add_argument('-p', '--permfilter', dest='permfilter', type=str, required=True, help='Whether to filter the results with permutation test results')
+    parser.add_argument('-g', '--graph', dest='graph', type=str, required=True, help='Which graph to output: areamap, singlevarexp, singlelayer')
     args = parser.parse_args()
 
     # check conditional requirements
@@ -201,9 +232,19 @@ if __name__ == '__main__':
     statistic = str(args.statistic)
     suffix = ''
     permfilter = bool(args.permfilter == 'True')
+    graph = str(areas.graph)
 
     # initialize and run the mapper
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
-    mapper.compute_and_plot_area_mapping(permfilter)
+    if graph == 'areamap':
+        mapper.compute_and_plot_area_mapping(permfilter)
+    elif graph == 'singlemnivar':
+        mapper.compute_and_plot_single_mni_score(permfilter)
+    elif graph == 'singlemnilayer':
+        mapper.compute_and_plot_single_mni_layer(permfilter)
+    else:
+        raise Exception('Unknown graph %s' % graph)
+
+
 
     print 'All done.'
