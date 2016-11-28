@@ -1,6 +1,14 @@
 Extract Brain Activations
 =========================
 
+To prepare the data for an experiment do the following in correct order:  
+
+* Check the `indata` parameters in `preprocess_compute_responsiveness.m`
+* Run `./preprocess_compute_responsiveness_alpha.sh`
+* Run `matlab -nojvm -nodisplay -nosplash -r "indata = 'LFP_bipolar_noscram_artif_brodmann'; bandname = 'alpha'; preprocess_filter_unresponsive; exit"`
+* `cd feature_extractos`
+* 
+
 ### Files
 Listed in the order of running.  
 `subject_files_we_posses.py` creates the `subjects.txt` list  
