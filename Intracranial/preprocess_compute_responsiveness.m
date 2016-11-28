@@ -78,7 +78,7 @@ for si = 1:length(listing)
         % test the null hypothesis that baseline = signal in band means
         p = signrank(baseline_band_means, fqsignal_band_means);
         disp([' ' num2str(mean(baseline_band_means)) ' -> ' num2str(mean(fqsignal_band_means))])
-        results = [results; si, probe, p, 0, mean(baseline_band_means), mean(fqsignal_band_means)];
+        results = [results; range(1)-1+si, probe, p, 0, mean(baseline_band_means), mean(fqsignal_band_means)];
         
     end 
     
@@ -88,35 +88,5 @@ for si = 1:length(listing)
     
 end
 
-% decide which probes will be dropped
+% store the results
 save(['../../Outcome/Probe responsiveness/' outdata], 'results')
-%pID = fdr(results(:, 3), 0.05);
-%disp(['pID = ' num2str(pID)])
-%results(:, 4) = results(:, 3) >= pID;
-
-%% drop all of the probes marked for dropping
-%for si = 1:length(listing)
-%    sfile = listing(si);
-%    disp(['Cleaning ' sfile.name ': dropping ' ...
-%          num2str(length(results(results(:, 1) == si & results(:, 4) == 1, 2))) ...
-%          ' (out of ' num2str(length(results(results(:, 1) == si))) ') probes'])
-%    
-%    % load the data
-%    load(['../../Data/Intracranial/Processed/' indata '/' sfile.name]);
-%    
-%    % drop discarded probes
-%    keepidx = results(results(:, 1) == si & results(:, 4) == 0, 2);
-%    s.probes.rod_names = s.probes.rod_names(keepidx);
-%    s.probes.probe_ids = s.probes.probe_ids(keepidx);
-%    s.probes.mni = s.probes.mni(keepidx, :);
-%    s.data = s.data(:, keepidx, :);
-%    
-%    % store the data
-%    save(['../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
-%    clearvars -except range freqlimits indata outdata listing results
-%    
-%end
-
-
-    
-    
