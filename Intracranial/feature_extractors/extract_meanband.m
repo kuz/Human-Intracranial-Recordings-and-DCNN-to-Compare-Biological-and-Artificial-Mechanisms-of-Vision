@@ -3,8 +3,9 @@ er = exist('range') == 1;
 en = exist('bandname') == 1;
 ef = exist('freqlimits') == 1;
 eb = exist('bins') == 1;
-if er + en + ef + eb ~= 4
-    disp('Required varibles are not set! Please check that you have specified range, bandname, freqlimits and bins. Terminating')
+ec = exist('ncycles') == 1;
+if er + en + ef + eb + ec ~= 5
+    disp('Required varibles are not set! Please check that you have specified range, bandname, freqlimits, ncycles and bins. Terminating')
     exit
 end
 
@@ -68,7 +69,7 @@ for sfile = listing'
             end
             
             % wavelet transform
-            [power, faxis, times, period] = waveletspectrogram(signal', 512, 'freqlimits', freqlimits);
+            [power, faxis, times, period] = waveletspectrogram(signal', 512, 'freqlimits', freqlimits, 'ncycles', ncycles);
 
             % take baseline for later normalization
             baseline_at = 205; % baseline from -500 to -100

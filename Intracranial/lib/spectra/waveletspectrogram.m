@@ -42,7 +42,14 @@ else
     freqres = 1;
 end
 
-[wave,period] = wavelet(signal,dt,pad,freqlimits,freqres);
+if sum(strcmp(varargin,'ncycles')) > 0
+    idx = find(strcmp(varargin, 'ncycles'));
+    ncycles = varargin{idx+1};
+else
+    ncycles = 6;
+end
+
+[wave,period] = wavelet(signal, dt, pad, freqlimits, freqres, 'param', ncycles);
 
 power = abs(wave).^2;
 faxis = 1./period;
@@ -202,6 +209,11 @@ scale = s0*2.^((0:J1)*dj);
 %%% also at defined frequency range and resolution.
 %%% By Sander Tanni 10/12/2014
 if (param == -1), k0 = 6.;, else;, k0 = param;, end
+
+disp('-----------------------')
+disp(param);
+disp('-----------------------')
+
 fourier_factor = (4*pi)/(k0 + sqrt(2 + k0^2));
 fscale = 1./(fourier_factor*scale);
 faxis = fliplr([ceil(min(fscale)):freqres:floor(max(fscale))]);
