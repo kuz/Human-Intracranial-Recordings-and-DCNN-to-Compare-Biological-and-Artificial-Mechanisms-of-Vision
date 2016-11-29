@@ -34,6 +34,7 @@ disp(['pID = ' num2str(pID)])
 results(:, 4) = results(:, 5) >= results(:, 6) | results(:, 3) >= pID;
 
 % drop all of the probes marked for dropping
+nsurvivors = 0;
 for si = 1:length(listing)
     sfile = listing(si);
     disp(['Cleaning ' sfile.name ': dropping ' ...
@@ -50,10 +51,12 @@ for si = 1:length(listing)
     s.probes.mni = s.probes.mni(keepidx, :);
     s.probes.areas = s.probes.areas(keepidx);
     s.data = s.data(:, keepidx, :);
-    
+    nsurvivors = nsurvivors + length(keepidx);
+
     % store the data
     save(['../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
-    clearvars -except range freqlimits indata outdata listing results
+    clearvars -except range freqlimits indata outdata listing results nsurvivors
     
 end
 
+disp(['In total survived ' num2str(nsurvivors) ' probes'])
