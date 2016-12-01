@@ -28,13 +28,23 @@ class Plotter:
 
     @staticmethod
     def xmni_yscore(basename, nlayers, data):
+
+        plt.figure(figsize=(10, 10), dpi=300);
+        for lid in range(nlayers):
+            x = data[data[:, 1] == lid, 0]
+            y = data[data[:, 1] == lid, 2]
+            plt.plot(x, y, 'o');
+            plt.legend(['Layer %d' % x for x in range(nlayers)]);
+        plt.savefig('%s_all.png' % basename, bbox_inches='tight');
+        plt.clf();
+
         for lid in range(nlayers):
             plt.figure(figsize=(10, 10), dpi=300);
             x = data[data[:, 1] == lid, 0]
             y = data[data[:, 1] == lid, 2]
             plt.plot(x, y, 'o');
             plt.legend(['Layer %d' % lid]);
-            plt.savefig('%s%d.png' % (basename, lid), bbox_inches='tight');
+            plt.savefig('%s_layer%d.png' % (basename, lid), bbox_inches='tight');
             plt.clf();
 
     @staticmethod
@@ -45,5 +55,5 @@ class Plotter:
             plt.hist(x, 50, normed=1)
             plt.xlim(-100, 20);
             plt.legend(['Layer %d' % lid]);
-            plt.savefig('%s%d.png' % (basename, lid), bbox_inches='tight');
+            plt.savefig('%s_layer%d.png' % (basename, lid), bbox_inches='tight');
             plt.clf();

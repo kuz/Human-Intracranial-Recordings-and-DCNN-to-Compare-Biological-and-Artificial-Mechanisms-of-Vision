@@ -1,9 +1,9 @@
 #!/bin/bash
 
 source ~/Python/bin/activate
-FEATURESET=meangamma_bipolar_noscram_artif_brodmann_resppositive
+FEATURESET=meanlowgamma_LFP_bipolar_noscram_artif_brodmann_lowgamma_resppositive
 DISTANCE=euclidean
-ONWHAT=image
+ONWHAT=matrix
 THRESHOLD=1.0
 nfiles=$(ls -l ../../Data/Intracranial/Processed/$FEATURESET/*.mat | wc -l)
 for i in $(seq 1 $nfiles)
