@@ -13,7 +13,7 @@ end
 % parameters
 outdata = ['mean' bandname '_' indata];
 if exist(['../../../Data/Intracranial/Processed/' outdata], 'dir') == 7
-    disp(['WARNING: Directory exists: ' outdata ', exiting...'])
+    disp(['WARNING: Directory exists: ' outdata])
 else
     mkdir(['../../../Data/Intracranial/Processed/' outdata])
 end
