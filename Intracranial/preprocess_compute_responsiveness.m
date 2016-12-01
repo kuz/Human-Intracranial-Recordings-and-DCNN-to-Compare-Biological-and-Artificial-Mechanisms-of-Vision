@@ -3,14 +3,20 @@ er = exist('range') == 1;
 ef = exist('freqlimits') == 1;
 eb = exist('bandname') == 1;
 ec = exist('ncycles') == 1;
-if er + ef + eb + ec ~= 4
-    disp('Required varibles are not set! Please check that you have specified range, freqlimits, bandname, ncycles. Terminating')
+ew = exist('window') == 1;
+if er + ef + eb + ec + ew ~= 5
+    disp('Required varibles are not set! Terminating')
     exit
 end
 
 % paramters
 indata = 'LFP_bipolar_noscram_artif_brodmann';
-outdata = [indata '_' bandname '_responsive_' num2str(range(1))];
+w_sta_ms = window(1);
+w_end_ms = window(2);
+w_sta_t = round(w_sta_ms / 1000 * 512);
+w_end_t = round(w_end_ms / 1000 * 512);
+outdata = [indata '_w' num2str(w_sta_ms) '_' bandname '_responsive_' num2str(range(1))];
+
 
 % load third party code
 addpath('lib')
@@ -65,8 +71,8 @@ for si = 1:length(listing)
 
             % take only part of the signal
             stimulus_at = 256;
-            from = stimulus_at + 26;   % 50 ms
-            till = stimulus_at + 128;  % 250 ms
+            from = stimulus_at + w_sta_t;
+            till = stimulus_at + w_end_t;
             fqsignal = power(:, from:till);
             
             % store frequency means
@@ -83,7 +89,7 @@ for si = 1:length(listing)
     end 
     
     % clear all subject-specific variables
-    clearvars -except range freqlimits ncycles indata outdata listing results
+    clearvars -except range freqlimits ncycles indata outdata listing results window w_sta_ms w_end_ms w_sta_t w_end_t
     fprintf('\n');
     
 end
