@@ -54,19 +54,20 @@ class Mapper:
             s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, self.featureset, sfile))
             sname = s['s']['name'][0][0][0]
             areas = np.ravel(s['s']['probes'][0][0][0][0][3])
+            mni = s['s']['probes'][0][0][0][0][2]
             scores = np.loadtxt('%s/%s.txt' % (self.SCOREDIR, sname))
             if len(areas) == 0 or len(scores) == 0:
                 scores = None
             else:
                 scores = scores.reshape((len(areas), self.nlayers))
-            allscores[sname] = {'scores': scores, 'areas': areas}
+            allscores[sname] = {'scores': scores, 'areas': areas, 'mni': mni}
         return allscores
 
     def _compute_pvals(self):
 
         # if p-value for this experiment were computed before -- reuse them
         try:
-            with open('%s_pvals.txt' % self.PERMDIR, 'rb') as infile:
+            with open('%s_pvals.pkl' % self.PERMDIR, 'rb') as infile:
                 pvals = cPickle.load(infile)
             print 'NOTICE: Reusing previously computed p-values'
             return pvals
@@ -98,7 +99,7 @@ class Mapper:
                 pvals[sname][pid] = np.sum(permutation_scores >= scores[sname]['scores'][pid], axis=0) / float(permutation_scores.shape[0])
 
         # store computed p-values for future runs
-        with open('%s_pvals.txt' % self.PERMDIR, 'wb') as outfile:
+        with open('%s_pvals.pkl' % self.PERMDIR, 'wb') as outfile:
             cPickle.dump(pvals, outfile)
 
         return pvals
@@ -189,9 +190,9 @@ class Mapper:
         for sname in scores:
             for pid in range(len(scores[sname]['areas'])):
                 if scores[sname]['areas'][pid] in [17, 18, 19, 37, 20]:
-                    for lid in range(nlayers):
+                    for lid in range(self.nlayers):
                         if not filter_by_permutation or pvals[sname][pid, lid] <= 0.001:
-                            record = np.array([scores[sname]['mni'][pid, 1], lid, scores[sname]['rhos'][pid, lid]**2]).reshape((1, 3))
+                            record = np.array([scores[sname]['mni'][pid, 1], lid, scores[sname]['scores'][pid, lid]**2]).reshape((1, 3))
                             allprobes = np.concatenate((allprobes, record))
 
         # drop record with static being 0
@@ -201,8 +202,11 @@ class Mapper:
         allprobes = allprobes[allprobes[:,0].argsort()]
 
         # generate and store plot
-        filename = '%s/Mapper/single_xmni_yscore_%s_%s%s.png' % (self.OUTDIR, self.backbone, self.featureset, permfiltered)
+        permfiltered = 'permfiltered' if filter_by_permutation else ''
+        filename = '%s/Mapper/single_xmni_yscore_%s_%s%s' % (self.OUTDIR, self.backbone, self.featureset, permfiltered)
         Plotter.xmni_yscore(filename, self.nlayers, allprobes)
+        filename = '%s/Mapper/single_hist_xmni_yscore_%s_%s%s' % (self.OUTDIR, self.backbone, self.featureset, permfiltered)
+        Plotter.hist_xmni_yvarexp(filename, self.nlayers, allprobes)
 
 
 if __name__ == '__main__':
@@ -215,7 +219,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=False, help='Significance level a score must have to be counter (1.0 to store all)')
     parser.add_argument('-s', '--statistic', dest='statistic', type=str, required=True, help='Type of score to compute when aggregating: varexp, corr')
     parser.add_argument('-p', '--permfilter', dest='permfilter', type=str, required=True, help='Whether to filter the results with permutation test results')
-    parser.add_argument('-g', '--graph', dest='graph', type=str, required=True, help='Which graph to output: areamap, singlevarexp, singlelayer')
+    parser.add_argument('-g', '--graph', dest='graph', type=str, required=True, help='Which graph to output: layer_area_score, mni_score, mni_layer')
     args = parser.parse_args()
 
     # check conditional requirements
@@ -232,15 +236,15 @@ if __name__ == '__main__':
     statistic = str(args.statistic)
     suffix = ''
     permfilter = bool(args.permfilter == 'True')
-    graph = str(areas.graph)
+    graph = str(args.graph)
 
     # initialize and run the mapper
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
-    if graph == 'areamap':
+    if graph == 'layer_area_score':
         mapper.compute_and_plot_area_mapping(permfilter)
-    elif graph == 'singlemnivar':
+    elif graph == 'mni_score':
         mapper.compute_and_plot_single_mni_score(permfilter)
-    elif graph == 'singlemnilayer':
+    elif graph == 'mni_layer':
         mapper.compute_and_plot_single_mni_layer(permfilter)
     else:
         raise Exception('Unknown graph %s' % graph)
