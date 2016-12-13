@@ -72,7 +72,8 @@ class RSAScorer:
         try:
             os.mkdir(self.OUTDIR)
         except:
-            print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
+            #print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
+            pass
 
     @staticmethod
     def compute_one_correlation_score(dnn, brain, scope, threshold):

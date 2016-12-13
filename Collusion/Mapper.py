@@ -95,7 +95,8 @@ class Mapper:
             pvals[sname] = np.ones(scores[sname]['scores'].shape)
             for pid in range(len(areas)):
                 print 'Computing p-value for subject %s probe %d' % (sname, pid)
-                permutation_scores = np.loadtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
+                #permutation_scores = np.loadtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
+                permutation_scores = np.genfromtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
                 pvals[sname][pid] = np.sum(permutation_scores >= scores[sname]['scores'][pid], axis=0) / float(permutation_scores.shape[0])
 
         # store computed p-values for future runs
@@ -127,7 +128,7 @@ class Mapper:
 
             # filter scores by permutation test results
             if filter_by_permutation:
-                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.00001)
+                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.0001)
 
             for aid in range(self.nareas):
                 

@@ -12,7 +12,7 @@ class RDM:
 
     #: Paths
     DATADIR = '../../Data'
-    CODEDIR = '../../Repository'
+    CODEDIR = '../../Code'
     OUTDIR = None
 
     #: The distance metric
@@ -66,7 +66,8 @@ class RDM:
             os.mkdir(self.OUTDIR)
             os.mkdir('%s/numbers' % self.OUTDIR)
         except:
-            print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
+            #print 'WARNING: directory %s already exists, make sure we are not overwriting something important there.' % self.OUTDIR
+            pass
         
 
     @abstractmethod

@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import scipy.io as sio
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pylab as plt
 
 class Plotter:
