@@ -4,13 +4,14 @@ addpath('lib')
 % parameters
 e1 = exist('indata') == 1;
 e2 = exist('bandname') == 1;
-if e1 + e2 ~= 2
+e3 = exist('window') == 1;
+if e1 + e2 + e3 ~= 3
     disp('Required varibles are not set! Terminating.')
     exit
 end
 
 % output directory
-outdata = [indata '_' bandname '_resppositive'];
+outdata = [indata '_w' num2str(window(1)) '_' bandname '_resppositive'];
 if exist(['../../Data/Intracranial/Processed/' outdata], 'dir') == 7
     disp(['Directory exists: ' outdata ', exiting...']);
     exit()
@@ -20,7 +21,7 @@ mkdir(['../../Data/Intracranial/Processed/' outdata]);
 
 % load data
 results = zeros(0, 6);
-results_listing = dir(['../../Outcome/Probe responsiveness/' indata '_' bandname '_responsive_*.mat']);
+results_listing = dir(['../../Outcome/Probe responsiveness/' indata '_w' num2str(window(1)) '_' bandname '_responsive_*.mat']);
 for rli = 1:length(results_listing)
     responses = load(['../../Outcome/Probe responsiveness/' results_listing(rli).name]);
     results = [results; responses.results];
