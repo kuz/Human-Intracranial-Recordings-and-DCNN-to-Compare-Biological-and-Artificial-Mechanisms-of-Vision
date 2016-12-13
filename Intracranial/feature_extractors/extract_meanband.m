@@ -1,22 +1,22 @@
 % variables
+ei = exist('indata') == 1;
 er = exist('range') == 1;
 en = exist('bandname') == 1;
 ef = exist('freqlimits') == 1;
 eb = exist('bins') == 1;
 ec = exist('ncycles') == 1;
-if er + en + ef + eb + ec ~= 5
-    disp('Required varibles are not set! Please check that you have specified range, bandname, freqlimits, ncycles and bins. Terminating')
+if ei + er + en + ef + eb + ec ~= 6
+    disp('Required varibles are not set! Terminating')
     exit
 end
 
 % parameters
-indata = 'LFP_bipolar_noscram_artif_responsive';
-outdata = ['mean' bandname '_bipolar_noscram_artif_responsive'];
+outdata = ['mean' bandname '_' indata];
 if exist(['../../../Data/Intracranial/Processed/' outdata], 'dir') == 7
-    disp(['Directory exists: ' outdata ', exiting...'])
-    exit()
+    disp(['WARNING: Directory exists: ' outdata])
+else
+    mkdir(['../../../Data/Intracranial/Processed/' outdata])
 end
-mkdir(['../../../Data/Intracranial/Processed/' outdata])
 
 % load third party code
 addpath('../lib/spectra')
@@ -28,7 +28,7 @@ listing = listing(range);
 % for each subject
 for sfile = listing'
 
-    disp(['Processing ' sfile.name ' '])
+    disp(['Processing ' sfile.name])
     
     % load the data
     load(['../../../Data/Intracranial/Processed/' indata '/' sfile.name]);
@@ -106,7 +106,7 @@ for sfile = listing'
     save(['../../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
     
     % clear all subject-specific variables
-    clearvars -except listing indata outdata freqlimits bins
+    clearvars -except listing indata outdata freqlimits bins ncycles
     fprintf('\n')
 
 end

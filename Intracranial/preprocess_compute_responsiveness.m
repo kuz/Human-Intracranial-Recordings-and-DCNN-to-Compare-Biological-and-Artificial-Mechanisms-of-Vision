@@ -1,14 +1,22 @@
 % variables
 er = exist('range') == 1;
 ef = exist('freqlimits') == 1;
-if er + ef ~= 2
-    disp('Required varibles are not set! Please check that you have specified range, freqlimits. Terminating')
+eb = exist('bandname') == 1;
+ec = exist('ncycles') == 1;
+ew = exist('window') == 1;
+if er + ef + eb + ec + ew ~= 5
+    disp('Required varibles are not set! Terminating')
     exit
 end
 
 % paramters
-indata = 'LFP_bipolar_noscram_artif';
-outdata = 'LFP_bipolar_noscram_artif_responsive0001';
+indata = 'LFP_bipolar_noscram_artif_brodmann';
+w_sta_ms = window(1);
+w_end_ms = window(2);
+w_sta_t = round(w_sta_ms / 1000 * 512);
+w_end_t = round(w_end_ms / 1000 * 512);
+outdata = [indata '_w' num2str(w_sta_ms) '_' bandname '_responsive_' num2str(range(1))];
+
 
 % load third party code
 addpath('lib')
@@ -55,7 +63,7 @@ for si = 1:length(listing)
             end
             
             % wavelet transform
-            [power, faxis, times, period] = waveletspectrogram(signal', 512, 'freqlimits', freqlimits);
+            [power, faxis, times, period] = waveletspectrogram(signal', 512, 'freqlimits', freqlimits, 'ncycles', ncycles);
             
             % take baseline for later normalization
             baseline_at = 205; % baseline from -500 to -100
@@ -63,8 +71,8 @@ for si = 1:length(listing)
 
             % take only part of the signal
             stimulus_at = 256;
-            from = stimulus_at + 26;   % 50 ms
-            till = stimulus_at + 128;  % 250 ms
+            from = stimulus_at + w_sta_t;
+            till = stimulus_at + w_end_t;
             fqsignal = power(:, from:till);
             
             % store frequency means
@@ -76,45 +84,15 @@ for si = 1:length(listing)
         % test the null hypothesis that baseline = signal in band means
         p = signrank(baseline_band_means, fqsignal_band_means);
         disp([' ' num2str(mean(baseline_band_means)) ' -> ' num2str(mean(fqsignal_band_means))])
-        results = [results; si, probe, p, 0, mean(baseline_band_means), mean(fqsignal_band_means)];
+        results = [results; range(1)-1+si, probe, p, 0, mean(baseline_band_means), mean(fqsignal_band_means)];
         
     end 
     
     % clear all subject-specific variables
-    clearvars -except range freqlimits indata outdata listing results
+    clearvars -except range freqlimits ncycles indata outdata listing results window w_sta_ms w_end_ms w_sta_t w_end_t
     fprintf('\n');
     
 end
 
-% decide which probes will be dropped
+% store the results
 save(['../../Outcome/Probe responsiveness/' outdata], 'results')
-pID = fdr(results(:, 3), 0.05);
-disp(['pID = ' num2str(pID)])
-results(:, 4) = results(:, 3) >= pID;
-
-% drop all of the probes marked for dropping
-for si = 1:length(listing)
-    sfile = listing(si);
-    disp(['Cleaning ' sfile.name ': dropping ' ...
-          num2str(length(results(results(:, 1) == si & results(:, 4) == 1, 2))) ...
-          ' (out of ' num2str(length(results(results(:, 1) == si))) ') probes'])
-    
-    % load the data
-    load(['../../Data/Intracranial/Processed/' indata '/' sfile.name]);
-    
-    % drop discarded probes
-    keepidx = results(results(:, 1) == si & results(:, 4) == 0, 2);
-    s.probes.rod_names = s.probes.rod_names(keepidx);
-    s.probes.probe_ids = s.probes.probe_ids(keepidx);
-    s.probes.mni = s.probes.mni(keepidx, :);
-    s.data = s.data(:, keepidx, :);
-    
-    % store the data
-    save(['../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
-    clearvars -except range freqlimits indata outdata listing results
-    
-end
-
-
-    
-    

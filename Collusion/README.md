@@ -8,8 +8,6 @@ we can proceed and make the comparison.
 
 Comparison via Linear Model predictions
 ---------------------------------------
-In this section we assume `meangamma_bipolar_noscram_artif_brodmann_resppositive` to be our working dataset.  
-
 `compute_linear_prediction_scores.sh` will train a linear model for each (DNN Layer, Probe) to predict Probe response
 from DNN Layer activity. The R^2 cross-validation score for each (DNN Layer, Probe) pair is stored in `Data/Intracranial/Probe_to_Layer_Maps/lp_meangamma_bipolar_noscram_artif_responsive_brodmann`  
 
@@ -26,7 +24,9 @@ Run `./compute_rdm_matrices.sh` (look inside to set parameters) to compute dista
 
 Next run `./compute_scores_on_rdms.sh` (look inside to set parameters) to compute correlation scores between each possible pair of 9 DNN repsentationans and ~1000 of probe responses. Resulting scores are stored under `../../Data/RSA/`.  
 
-We can rely on `spearmanr` p-value or perform our own permutation test, for that run `python compute_permuted_rdm_scores.py -f meangamma_bipolar_noscram_artif_brodmann_resppositive -d euclidean -o image -t 1.0`
+Perform the permutation test by running `python compute_permuted_rdm_scores.py -f meanalpha_LFP_bipolar_noscram_artif_brodmann_alpha_resppositive -d euclidean -o matrix -t 1.0`
 
 Next mapper
-`python Mapper.py -b rsa -f meangamma_bipolar_noscram_artif_brodmann_resppositive -d euclidean -o image -t 0.00001 -s varexp -p False -g layer_area_score`
+On HPC: `export LD_LIBRARY_PATH=/gpfs/hpchome/a72073/Python/lib/:/usr/lib:/usr/local/lib:/usr/lib64:/usr/local/lib64:/gpfs/hpchome/a72073/Software/lib`  
+and then `srun -N 1 --cpus-per-task=1 --mem=4000 -t 24:00:00 python Mapper.py -b rsa -f meanalpha_LFP_bipolar_noscram_artif_brodmann_alpha_resppositive -d euclidean -o matrix -t 1.0 -s corr -p True -g layer_area_score`  
+(on EENet: `srun -N 1 --partition=long --cpus-per-task=1 --mem=4000 --exclude idu[38-41] python Mapper.py -b rsa -f meanalpha_LFP_bipolar_noscram_artif_brodmann_alpha_resppositive -d euclidean -o matrix -t 1.0 -s corr -p True -g layer_area_score`)

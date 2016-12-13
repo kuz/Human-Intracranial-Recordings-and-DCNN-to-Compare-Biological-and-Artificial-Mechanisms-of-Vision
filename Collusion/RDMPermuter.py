@@ -8,7 +8,7 @@ import traceback
 class RDMPermuter:
 
     #: Number of runs per iteration
-    nruns = 100000
+    nruns = 10000
 
     #: Paths
     DATADIR = '../../Data'
@@ -80,6 +80,7 @@ class RDMPermuter:
             
             rdm_brain = RDMBrain(self.distance, self.featureset, self.sid, True)
             for run in range(self.nruns):
+                if run % 100 == 0: print run
                 brain_dsm = rdm_brain.compute_dsm(pid)
                 scores[run, lid] = RSAScorer.compute_one_correlation_score(dnn_dsm, brain_dsm, self.scope, self.threshold)
 

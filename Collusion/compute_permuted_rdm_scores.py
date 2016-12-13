@@ -16,8 +16,6 @@ featureset = str(args.featureset)
 distance = str(args.distance)
 onwhat = str(args.onwhat)
 threshold = str(args.threshold)
-
-featureset = 'meangamma_bipolar_noscram_artif_brodmann_resppositive'
 DATADIR = '../../Data'
 
 subjects = os.listdir('%s/Intracranial/Processed/%s/' % (DATADIR, featureset))
@@ -26,7 +24,7 @@ for sid in range(len(subjects)):
     for pid in range(len(np.ravel(s['s']['probes'][0][0][0][0][3]))):
         print 'Processing subject %d probe %d' % (sid, pid)
         Popen(['srun -N 1 --partition=long --cpus-per-task=1 --mem=2000 --exclude idu[38-41] python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s' % (sid, pid, featureset, distance, onwhat, threshold)], shell='True', stdin=None, stdout=None, stderr=None, close_fds=True)
-        time.sleep(7*60)
+        time.sleep(48)
 
 print 'All done.'
 
