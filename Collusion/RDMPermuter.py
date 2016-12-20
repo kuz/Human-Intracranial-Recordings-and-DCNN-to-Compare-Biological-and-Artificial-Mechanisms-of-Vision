@@ -8,7 +8,7 @@ import traceback
 class RDMPermuter:
 
     #: Number of runs per iteration
-    nruns = 10000
+    nruns = 100000
 
     #: Paths
     DATADIR = '../../Data'
@@ -87,6 +87,8 @@ class RDMPermuter:
         np.savetxt('%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s/%s-%d.txt' % (self.DATADIR, self.backbone, self.featureset,
                    self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), self.sname, pid),
                    scores, fmt='%.6f')
+
+        print 'Done with %s' % self.sname
 
 
 if __name__ == '__main__':
