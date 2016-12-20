@@ -12,8 +12,6 @@ if ei + er + en + ef + eb + ec + ew ~= 7
 end
 
 % parameters
-
-% paramters
 w_sta_ms = window(1);
 w_end_ms = window(2);
 w_sta_t = round(w_sta_ms / 1000 * 512);
