@@ -4,13 +4,13 @@ ef = exist('freqlimits') == 1;
 eb = exist('bandname') == 1;
 ec = exist('ncycles') == 1;
 ew = exist('window') == 1;
-if er + ef + eb + ec + ew ~= 5
+ei = exist('indata') == 1;
+if er + ef + eb + ec + ew + ei ~= 6
     disp('Required varibles are not set! Terminating')
     exit
 end
 
 % paramters
-indata = 'LFP_bipolar_noscram_artif_brodmann';
 w_sta_ms = window(1);
 w_end_ms = window(2);
 w_sta_t = round(w_sta_ms / 1000 * 512);
