@@ -106,7 +106,7 @@ for sfile = listing'
     save(['../../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
     
     % clear all subject-specific variables
-    clearvars -except listing indata outdata freqlimits bins ncycles
+    clearvars -except listing indata outdata freqlimits bins ncycles window w_sta_ms w_end_ms w_sta_t w_end_t
     fprintf('\n')
 
 end
