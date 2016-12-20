@@ -5,12 +5,19 @@ en = exist('bandname') == 1;
 ef = exist('freqlimits') == 1;
 eb = exist('bins') == 1;
 ec = exist('ncycles') == 1;
-if ei + er + en + ef + eb + ec ~= 6
+ew = exist('window') == 1;
+if ei + er + en + ef + eb + ec + ew ~= 7
     disp('Required varibles are not set! Terminating')
     exit
 end
 
 % parameters
+
+% paramters
+w_sta_ms = window(1);
+w_end_ms = window(2);
+w_sta_t = round(w_sta_ms / 1000 * 512);
+w_end_t = round(w_end_ms / 1000 * 512);
 outdata = ['mean' bandname '_' indata];
 if exist(['../../../Data/Intracranial/Processed/' outdata], 'dir') == 7
     disp(['WARNING: Directory exists: ' outdata])
@@ -77,14 +84,9 @@ for sfile = listing'
 
             % take only part of the signal
             stimulus_at = 256;
-            from = stimulus_at + 26;   % 50 ms
-            till = stimulus_at + 128;  % 250 ms
-            %from = stimulus_at + 79; % 150ms
-            %till = stimulus_at + 205; % 400ms 
+            from = stimulus_at + w_sta_t;
+            till = stimulus_at + w_end_t;
             fqsignal = power(:, from:till);
-
-            % normalization A: whole band average / whole band baseline average
-            %meanband(stimulus, probe) = mean2(fqsignal) / mean2(baseline);
 
             % normalization B: 10 hz bins, divide, average
             ratios = [];
