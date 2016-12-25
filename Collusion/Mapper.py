@@ -47,7 +47,9 @@ class Mapper:
         else:
             raise Exception('Unknown backbone %s' % self.backbone)
         self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset))
-    
+        print 'Initialized Mapper with:'
+        print '\tSCOREDIR %s' % self.SCOREDIR
+
     def _collect_scores(self):
         allscores = {}
         for sfile in self.subjects:

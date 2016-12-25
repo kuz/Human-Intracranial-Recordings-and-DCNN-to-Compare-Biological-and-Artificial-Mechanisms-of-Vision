@@ -20,11 +20,13 @@ on one 3D mesh (probably will look messy)
 Comparison via Representational Dissimilarity Analysis
 ------------------------------------------------------
 
-Run `./compute_rdm_matrices.sh` (look inside to set parameters) to compute distance matrices over stimuli in all possible feature spaces: pixels, DNN layer activation, each particular probe responses.  
+Run `./compute_rdm_matrices.sh [FEATURESET] [DISTANCE]` (for example `./compute_rdm_matrices.sh meanhighgamma_LFP_bipolar_noscram_artif_brodmann_w50_highgamma_resppositive euclidean`) to compute distance matrices over stimuli in all possible feature spaces: pixels, DNN layer activation, each particular probe responses. Resulting matrices are stored under `../../Data/RSA/`.  
 
-Next run `./compute_scores_on_rdms.sh` (look inside to set parameters) to compute correlation scores between each possible pair of 9 DNN repsentationans and ~1000 of probe responses. Resulting scores are stored under `../../Data/RSA/`.  
+Next run `./compute_scores_on_rdms.sh [FEATURESET] [DISTANCE] [ONWHAT] [THRESHOLD]` (example: `./compute_scores_on_rdms.sh meanhighgamma_LFP_bipolar_noscram_artif_brodmann_w50_highgamma_resppositive euclidean matrix 1.0`) to compute correlation scores between each possible pair of 9 DNN repsentationans and ~1000 of probe responses. Here you decide whether to use threshold, or you will used permutation test to filter the results. Computed scores are stored under `../../Data/Intracranial/Probe_to_Layer_Maps/`.  
 
-Perform the permutation test by running `python compute_permuted_rdm_scores.py -f meanalpha_LFP_bipolar_noscram_artif_brodmann_alpha_resppositive -d euclidean -o matrix -t 1.0`
+Perform the permutation test by running `python compute_permuted_rdm_scores.py -f [FEATURESET] -d [DISTANCE] -o [ONWHAT] -t [THRESHOLD]` (example: `python compute_permuted_rdm_scores.py -f meanalpha_LFP_bipolar_noscram_artif_brodmann_alpha_resppositive -d euclidean -o matrix -t 1.0`)
+
+(to check for IO errors `for fn in $(ls *); do nr=$(cat $fn | wc -l); if [ $nr -gt 10000 ]; then echo $fn; fi; done`)
 
 Next mapper
 On HPC: `export LD_LIBRARY_PATH=/gpfs/hpchome/a72073/Python/lib/:/usr/lib:/usr/local/lib:/usr/lib64:/usr/local/lib64:/gpfs/hpchome/a72073/Software/lib`  
