@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # parameters
-source ~/Python/bin/activate
+source ~/venvs/py27/bin/activate
 
 FEATURESET=$1
-DISTANCE=$1
+DISTANCE=$2
 if [ -z "$FEATURESET" ]; then
     echo 'Error: FEATURESET is not specified'
     exit
