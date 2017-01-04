@@ -1,6 +1,8 @@
 The Pipeline
 ============
 
+<img align="right" src="Intracranial and DNN Experimental Pipeline.png" />
+
 ### DNN Activations
 First we feed stimuli though the DNN to extract activations of each layer of DNN.
 See [`DNN/RADME.md`](DNN/RADME.md) section "Scripts and running order" for detalils.
