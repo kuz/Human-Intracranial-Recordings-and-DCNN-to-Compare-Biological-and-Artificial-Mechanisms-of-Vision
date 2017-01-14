@@ -4,6 +4,7 @@ import cPickle
 import numpy as np
 import scipy.io as sio
 from Plotter import Plotter
+from scipy.stats import spearmanr
 
 class Mapper:
 
@@ -107,7 +108,7 @@ class Mapper:
 
         return pvals
 
-    def compute_and_plot_area_mapping(self, filter_by_permutation=False):
+    def compute_and_plot_area_mapping(self, filter_by_permutation=False, only_visual=False):
 
         # load the correlation scores
         scores = self._collect_scores()
@@ -120,6 +121,12 @@ class Mapper:
         score_per_arealayer = np.zeros((self.nareas, self.nlayers))
         n_sig_per_area = np.zeros(self.nareas)
         n_tot_per_area = np.zeros(self.nareas)
+        n_per_arealayer = np.zeros((self.nareas, self.nlayers))
+
+        single_scores = {}
+        for aid in range(self.nareas):
+            for lid in range(self.nlayers):
+                single_scores[(aid, lid)] = []
 
         # aggregate scores over all subjects
         for sname in scores.keys():
@@ -130,7 +137,7 @@ class Mapper:
 
             # filter scores by permutation test results
             if filter_by_permutation:
-                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.0001)
+                scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.001)
 
             for aid in range(self.nareas):
                 
@@ -145,6 +152,9 @@ class Mapper:
                 n_sig_per_area[aid] += np.sum(np.sum(scores[sname]['scores'][scores[sname]['areas'] == aid], axis=1) > 0.0)
 
                 for lid in range(self.nlayers):
+
+                    n_per_arealayer[aid, lid] += np.sum(scores[sname]['scores'][scores[sname]['areas'] == aid, lid] > 0.0)
+
                     if self.statistic == 'corr':
                         sig_score = np.sum(scores[sname]['scores'][scores[sname]['areas'] == aid, lid])
                     elif self.statistic == 'varexp':
@@ -152,6 +162,9 @@ class Mapper:
                     else:
                         raise Exception('Unknown statistic %s' % self.statistic)
                     score_per_arealayer[aid, lid] += sig_score
+
+                    if sig_score > 0.0:
+                        single_scores[(aid, lid)].append(sig_score)
 
         #if self.statistic == 'corr':
         #    pass
@@ -170,14 +183,100 @@ class Mapper:
 
         # different filenames for different scoring backbone methods
         if self.backbone == 'rsa':
-            filename = '%s/Mapper/%s_%s.%s%s.%s%s%s.png' % (self.OUTDIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+            filename = '%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
         elif self.backbone == 'lp':
-            filename = '%s/Mapper/%s_%s%s.png' % (self.OUTDIR, self.backbone, self.featureset, permfiltered)
+            filename = '%s_%s%s.png' % (self.backbone, self.featureset, permfiltered)
         else:
             raise Exception('Unknown backbone %s' % self.backbone)
 
+        #
+        # Stats
+        #
+
+        # diagonality with weighed spearman
+        visual_areas = [17, 18, 19, 37, 29]
+        areas = []
+        layers = []
+        weights = []
+        for a, aid in enumerate(visual_areas):
+            for lid in range(self.nlayers):
+                for s in single_scores[(aid, lid)]:
+                    areas.append(a)
+                    layers.append(lid)
+                    weights.append(s)
+
+        print areas
+        print layers
+        print weights
+
+        exit()
+
+        # diagonality
+        #visual_areas = [17, 18, 19, 37, 29]
+        #n_per_visual = n_per_arealayer[visual_areas, :]
+        #score_per_visual_normalized = score_per_arealayer_normalized[visual_areas, :]
+        #areas = []
+        #layers = []
+        #for a in range(len(visual_areas)):
+        #    for l in range(self.nlayers):
+        #        for c in range(int(n_per_visual[a, l])):
+        #            areas.append(a)
+        #            layers.append(l)
+        #diagonality = spearmanr(areas, layers)
+        #title = 'Diagonality: %.4f (p-value: %.5f)' % (diagonality[0], diagonality[1]) 
+        #print title
+
+        # visual volume
+        #volume = np.ravel(np.sum(score_per_arealayer_normalized, 1)) * n_sig_per_area
+        #visual_areas = [17, 18, 19, 37, 29]
+        #visual_volume = np.sum(volume[visual_areas])
+
+        # specifity to visual areas
+        #total_volume = np.sum(volume)
+        #specificity_to_visual = visual_volume / total_volume
+
+        # log ratio high-layer to low-layers
+        #high_visual_volume = np.sum(score_per_arealayer_normalized[visual_areas][:, [5,6,7]])
+        #low_visual_volume = np.sum(score_per_arealayer_normalized[visual_areas][:, [1,2,3]])
+        #logratio = np.log(high_visual_volume / low_visual_volume)
+
+        #print 'Visual volume:      %.4f' % visual_volume
+        #print 'Visual specificity: %.4f' % specificity_to_visual
+        #print 'High/low logratio:  %.4f' % logratio
+
+        # log ratio per area
+        #print '\t17: %.4f' % np.log(np.sum(score_per_arealayer_normalized[17, [5,6,7]]) / np.sum(score_per_arealayer_normalized[17, [1,2,3]]))
+        #print '\t18: %.4f' % np.log(np.sum(score_per_arealayer_normalized[18, [5,6,7]]) / np.sum(score_per_arealayer_normalized[18, [1,2,3]]))
+        #print '\t19: %.4f' % np.log(np.sum(score_per_arealayer_normalized[19, [5,6,7]]) / np.sum(score_per_arealayer_normalized[19, [1,2,3]]))
+        #print '\t37: %.4f' % np.log(np.sum(score_per_arealayer_normalized[37, [5,6,7]]) / np.sum(score_per_arealayer_normalized[37, [1,2,3]]))
+        #print '\t20: %.4f' % np.log(np.sum(score_per_arealayer_normalized[20, [5,6,7]]) / np.sum(score_per_arealayer_normalized[20, [1,2,3]]))
+        
+        # volume per area
+        #print '\t17: %.4f' % np.sum(volume[17])
+        #print '\t18: %.4f' % np.sum(volume[18])
+        #print '\t19: %.4f' % np.sum(volume[19])
+        #print '\t37: %.4f' % np.sum(volume[37])
+        #print '\t20: %.4f' % np.sum(volume[20])
+
+        # visual specificity per layer
+        #specificity_to_visual_per_layer = np.sum(score_per_arealayer_normalized[visual_areas], 0) / np.sum(score_per_arealayer_normalized, 0)
+        #for l in range(self.nlayers):
+        #    print 'L%d: %.4f' % (l, specificity_to_visual_per_layer[l])
+
+        # visual volume per layer
+        #visual_scores = score_per_arealayer_normalized[visual_areas, :]
+        #visual_layer_volume = np.sum(visual_scores, 0)
+        #for l in range(self.nlayers):
+        #    print 'L%d: %.4f' % (l, visual_layer_volume[l])
+
         # generate and store plot
-        Plotter.xlayer_yarea_zscore(filename, self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized)
+        if only_visual:
+            filename = 'visual_' + filename
+            Plotter.xlayer_yarea_zscore_visual_linfit('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers,
+                                                      n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
+        else:
+            Plotter.xlayer_yarea_zscore('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers,
+                                        n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
 
     def compute_and_plot_single_mni_score(self, filter_by_permutation=False):
 
@@ -244,7 +343,9 @@ if __name__ == '__main__':
     # initialize and run the mapper
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
     if graph == 'layer_area_score':
-        mapper.compute_and_plot_area_mapping(permfilter)
+        mapper.compute_and_plot_area_mapping(permfilter, only_visual=False)
+    elif graph == 'layer_area_score_visual':
+        mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
     elif graph == 'mni_score':
         mapper.compute_and_plot_single_mni_score(permfilter)
     elif graph == 'mni_layer':
