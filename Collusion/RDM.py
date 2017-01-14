@@ -175,6 +175,9 @@ class RDMBrain(RDM):
         self.subject['name'] = s['s']['name'][0][0][0]
         self.representation = self.subject['data'][self.reorder_stimulation_to_categories]
 
+        # disable the poison pill
+        self.representation[self.representation == -123456] = 0.0
+
         if self.shuffle:
             new_order = np.random.permutation(range(self.representation.shape[0]))
             self.representation = self.representation[new_order]

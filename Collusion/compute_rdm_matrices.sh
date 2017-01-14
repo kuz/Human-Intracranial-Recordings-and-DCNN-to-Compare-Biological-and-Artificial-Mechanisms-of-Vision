@@ -29,3 +29,5 @@ do
     sleep 2
 done
 
+echo 'All sent'
+

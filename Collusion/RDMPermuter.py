@@ -8,7 +8,7 @@ import traceback
 class RDMPermuter:
 
     #: Number of runs per iteration
-    nruns = 100000
+    nruns = 10000
 
     #: Paths
     DATADIR = '../../Data'
@@ -88,7 +88,7 @@ class RDMPermuter:
                    self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), self.sname, pid),
                    scores, fmt='%.6f')
 
-        print 'Done with %s' % self.sname
+        print 'Done with %s (%d)' % (self.sname, self.sid)
 
 
 if __name__ == '__main__':

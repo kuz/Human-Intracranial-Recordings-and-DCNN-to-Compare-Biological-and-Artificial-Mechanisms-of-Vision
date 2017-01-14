@@ -27,7 +27,7 @@ for sid in range(len(subjects)):
         #time.sleep(15)
         print "echo 'Processing subject %d probe %d'" % (sid, pid)
         print 'srun -N 1 --partition=long --cpus-per-task=1 --mem=4000 -t 24:00:00 --exclude idu[38-41] python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s &' % (sid, pid, featureset, distance, onwhat, threshold)
-        print 'sleep 200'
+        print 'sleep 30'
 
 print 'echo "All sent"'
 
