@@ -35,6 +35,41 @@ class Plotter:
         plt.clf();
 
     @staticmethod
+    def xlayer_yarea_zscore_visual(filename, nareas, nlayers, n_sig_in_area, n_tot_in_area, data, title):
+       
+        # trim data to visual areas
+        visual_areas = visual_areas = [17, 18, 19, 37, 20]
+        nareas = len(visual_areas)
+        n_sig_in_area = n_sig_in_area[visual_areas]
+        n_tot_in_area = n_tot_in_area[visual_areas]
+        data = data[visual_areas, :]
+
+        # generate Y axis labels
+        ylabels = []
+        for aid in range(nareas):    
+            prefix = '0' if visual_areas[aid] < 10 else ''
+            label = '(%d/%d) %s%d' % (int(n_sig_in_area[aid]), int(n_tot_in_area[aid]), prefix, visual_areas[aid])
+            ylabels.append(label)
+
+        # plot
+        plt.figure(figsize=(15, 8), dpi=600);
+        plt.imshow(data, interpolation='none', cmap=cm.Blues);
+        plt.clim(0, 0.22);
+        plt.xticks(range(nlayers), size=24);
+        plt.yticks(range(nareas), ylabels, size=24);
+        plt.xlabel('DCNN layer', size=24);
+        plt.ylabel('Brodmann area', size=24);
+        plt.title(title, size=24);
+        #plt.colorbar();
+        for aid in range(nareas):
+            for lid in range(nlayers):
+                plt.text(lid, aid, ('%.3f' % data[aid, lid])[1:], va='center', ha='center', size=24)
+
+        plt.savefig(filename, bbox_inches='tight');
+        plt.clf();
+        plt.close();
+
+    @staticmethod
     def xlayer_yarea_zscore_visual_linfit(filename, nareas, nlayers, n_sig_in_area, n_tot_in_area, data, title):
        
         # trim data to visual areas
@@ -65,7 +100,7 @@ class Plotter:
 
         # plot
         plt.figure(figsize=(15, 8), dpi=600);
-        #plt.subplot(1, 2, 1)
+        plt.subplot(1, 2, 1)
 
         plt.imshow(data, interpolation='none', cmap=cm.Blues);
         plt.clim(0, 0.22);
@@ -79,13 +114,13 @@ class Plotter:
             for lid in range(nlayers):
                 plt.text(lid, aid, ('%.3f' % data[aid, lid])[1:], va='center', ha='center', size=24)
 
-        #plt.subplot(1, 2, 2)
-        #plt.scatter(x, y, s=np.array(np.ravel(data))*1000);
-        #plt.plot(np.array(x), ideal_m*np.array(x)+ideal_b, 'g');
-        #plt.plot(np.array(x), m*np.array(x)+b, 'b');
-        #plt.title('Cosine distance: %.5f' % cosine(v, ideal_v))
-        #plt.xticks(range(nlayers));
-        #plt.yticks(range(nareas), list(reversed(ylabels)));
+        plt.subplot(1, 2, 2)
+        plt.scatter(x, y, s=np.array(np.ravel(data))*1000);
+        plt.plot(np.array(x), ideal_m*np.array(x)+ideal_b, 'g');
+        plt.plot(np.array(x), m*np.array(x)+b, 'b');
+        plt.title('Cosine distance: %.5f' % cosine(v, ideal_v))
+        plt.xticks(range(nlayers));
+        plt.yticks(range(nareas), list(reversed(ylabels)));
 
         plt.savefig(filename, bbox_inches='tight');
         plt.clf();
