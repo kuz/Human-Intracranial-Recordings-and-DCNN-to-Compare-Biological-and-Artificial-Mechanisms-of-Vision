@@ -230,10 +230,11 @@ class Mapper:
         title = 'Alignment: %.4f (p-value: %.5f)' % (diagonality[0], diagonality[1]) 
         print title
 
-        volume = np.ravel(np.sum(score_per_arealayer_normalized, 1)) * n_sig_per_area
-        """# visual volume
-        visual_volume = np.sum(volume[visual_areas])
-        print 'Visual volume: %.4f' % visual_volume"""
+        # volume
+        volume = np.sum(score_per_arealayer, 1) / n_tot_per_area
+        visual_volume = np.sum(score_per_arealayer[visual_areas], 1) / n_tot_per_area[visual_areas]
+        volume[np.isnan(volume)] = 0
+        visual_volume[np.isnan(visual_volume)] = 0
 
         """# specifity to visual areas
         total_volume = np.sum(volume)
@@ -249,10 +250,12 @@ class Mapper:
             if np.isnan(ratio): ratio = 0.0
             print '\t%d: %.4f' % (a, ratio)"""
 
-        """# volume per area
+        # volume per area
+        """
         print 'Volume:'
         for a in visual_areas:
-            print '\t%d: %.4f' % (a, np.sum(volume[a]))"""
+            print '\t%d: %.4f' % (a, np.sum(volume[a]))
+        """
 
         """# visual specificity per layer
         specificity_to_visual_per_layer = np.sum(score_per_arealayer_normalized[visual_areas], 0) / np.sum(score_per_arealayer_normalized, 0)
@@ -260,33 +263,24 @@ class Mapper:
         for l in range(self.nlayers):
             print 'L%d: %.4f' % (l, specificity_to_visual_per_layer[l])"""
 
-        """# visual volume per layer
+        # visual volume per layer
+        #"""
         visual_scores = score_per_arealayer_normalized[visual_areas, :]
         visual_layer_volume = np.sum(visual_scores, 0)
         print 'Volume per layer'
         for l in range(self.nlayers):
-            print 'L%d: %.4f' % (l, visual_layer_volume[l])"""
+            print 'L%d: %.4f' % (l, visual_layer_volume[l])
+        #"""
 
         # gamma in convolutional vs. theta-alpha-beta in fully connected
+        """
         convs = np.ravel(score_per_visual_normalized[:, [1,2,3,4,5]])
         convs = convs[convs > 0.0]
         fcs = np.ravel(score_per_visual_normalized[:, [6,7]])
         fcs = fcs[fcs > 0.0]
-        """
-        convs = []
-        fcs = []
-        for (a, l) in single_scores:
-            if l in [6,7]:
-                fcs += single_scores[(a, l)]
-            if l in [1,2,3,4,5]:
-                convs += single_scores[(a, l)]
-        """
         print 'FC Volume', np.sum(fcs)
         print 'Conv Volume', np.sum(convs)
-        #print np.mean(fcs)
-        #print np.mean(convs)
-        #print 'FC > Conv', mannwhitneyu(list(fcs), list(convs), False, 'greater').pvalue
-        #print 'Conv > FC', mannwhitneyu(list(convs), list(fcs), False, 'greater').pvalue
+        """
         
 
         # generate and store plot
