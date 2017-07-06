@@ -28,7 +28,7 @@ for i in $(seq 1 $nfiles)
 do
     let i=i-1
     srun -N 1 --partition=long --cpus-per-task=1 --mem=2000 --exclude=idu[38-41] python RSAScorer.py -f $FEATURESET -d $DISTANCE -i $i -o $ONWHAT -t $THRESHOLD &
-    sleep 5
+    sleep 2
 done
 
 echo 'All sent'

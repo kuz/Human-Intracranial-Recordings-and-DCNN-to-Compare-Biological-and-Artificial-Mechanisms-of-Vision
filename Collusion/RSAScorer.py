@@ -77,7 +77,13 @@ class RSAScorer:
 
     @staticmethod
     def compute_one_correlation_score(dnn, brain, scope, threshold):
-        
+        '''
+        @param scope:     either 'matrix' or 'image' to indicate whethet correlation is computed
+                          between whole matrices or image-by-image and then averaged
+        @param threshold: signicance threshold a correlation must have to be stored as a result
+                          use None to store all of the scores for the permutation test
+        '''
+
         # scale the data
         mms = MinMaxScaler()
         dnn = mms.fit_transform(dnn)
@@ -108,12 +114,6 @@ class RSAScorer:
             return score / float(nrows)
 
     def compute_all_correlation_scores(self):
-        """
-        @param scope: either 'matrix' or 'image' to indicate whethet correlation is computed
-                      between whole matrices or image-by-image and then averaged
-        @param threshold: signicance threshold a correlation must have to be stored as a result
-                          use None to store all of the scores for the permutation test
-        """
         nprobes = len(self.brain_dsm)
         #nstim = self.brain_dsm[0].shape[0]
         self.scores = np.zeros((nprobes, len(self.layers)))

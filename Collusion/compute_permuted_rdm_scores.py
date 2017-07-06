@@ -26,8 +26,8 @@ for sid in range(len(subjects)):
         #Popen(['srun -N 1 --partition=long --cpus-per-task=1 --mem=4000 -t 24:00:00 python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s' % (sid, pid, featureset, distance, onwhat, threshold)], shell='True', stdin=None, stdout=None, stderr=None, close_fds=True)
         #time.sleep(15)
         print "echo 'Processing subject %d probe %d'" % (sid, pid)
-        print 'srun -N 1 --partition=long --cpus-per-task=1 --mem=4000 -t 24:00:00 --exclude idu[38-41] python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s &' % (sid, pid, featureset, distance, onwhat, threshold)
-        print 'sleep 30'
+        print 'srun -N 1 --partition=long --cpus-per-task=2 --mem=8000 -t 24:00:00 --exclude idu[38-41] python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s &' % (sid, pid, featureset, distance, onwhat, threshold)
+        print 'sleep 3'
 
 print 'echo "All sent"'
 

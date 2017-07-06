@@ -2,8 +2,7 @@ import os
 import argparse
 import numpy as np
 from RDM import RDMPixel, RDMDNN, RDMBrain
-from RSAScorer import RSAScorer
-import traceback
+from scipy.stats import spearmanr
 
 class RDMPermuter:
 
@@ -55,40 +54,39 @@ class RDMPermuter:
 
     def run(self):
 
-        # load true score
-        true_score = np.loadtxt('%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s%s/%s.txt' %
-                                (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix,
-                                 self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), self.sname))
-        true_score = true_score[self.pid]
+        # load true RDM
+        rdm_brain = RDMBrain(self.distance, self.featureset, self.sid, False)
+        brain_dsm = rdm_brain.return_dsm(self.pid)
 
         # load DNN RDMs
-        pixel_rdm = RDMPixel(self.distance, self.featureset, shuffle=False)
+        layers = ['pixels', 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
+        pixel_rdm = RDMPixel(self.distance, self.featureset, shuffle=False, load_representation=False)
         pixel_rdm.load_dsm()
-        layer_rdm = RDMDNN(self.distance, 'numpy.reference', self.featureset, shuffle=False)
+        layer_rdm = RDMDNN(self.distance, 'numpy.reference', self.featureset, shuffle=False, load_representation=False)
         layer_rdm.load_dsm()
         
-        # compute more scores
-        layers = ['pixels', 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
-        scores = np.zeros((self.nruns, len(layers)))
+        # generate random brain RDM permutations into 10000 x 72631 matrix
+        brain_dsms = np.zeros((self.nruns, brain_dsm.shape[0] * brain_dsm.shape[1])) # 10000 x 72361
+        for i in range(self.nruns):
+            new_order = np.random.permutation(range(brain_dsm.shape[0]))
+            brain_dsms[i, :] = np.ravel(brain_dsm[new_order, :][:, new_order])
+
+        # store layer RDMs into one 9 x 72361 matrix
+        layer_dsms = np.zeros((len(layers), brain_dsm.shape[0] * brain_dsm.shape[1]))
         for lid, layer in enumerate(layers):
-            
-            # load unshuffled DNN layer DSM
             if layer == 'pixels':
-                dnn_dsm = pixel_rdm.dsm
+                layer_dsms[lid, :] = np.ravel(pixel_rdm.dsm)
             else:
-                dnn_dsm = layer_rdm.dsm[layer]
-            
-            rdm_brain = RDMBrain(self.distance, self.featureset, self.sid, True)
-            for run in range(self.nruns):
-                brain_dsm = rdm_brain.compute_dsm(pid)
-                scores[run, lid] = RSAScorer.compute_one_correlation_score(dnn_dsm, brain_dsm, self.scope, self.threshold)
+                layer_dsms[lid, :] = np.ravel(layer_rdm.dsm[layer])
+
+        # compute scores with hackily optimized call to scipy.stats.spearmanr
+        scores = np.zeros((self.nruns, len(layers)))
+        for st in np.arange(0, self.nruns, 1000):
+            scores[st:st + 1000, :] = spearmanr(brain_dsms[st:st + 1000, :], layer_dsms, axis=1).correlation[:1000, 1000:]
 
         # save all scores
-        np.savetxt('%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s/%s-%d.txt' % (self.DATADIR, self.backbone, self.featureset,
-                   self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), self.sname, pid),
-                   scores, fmt='%.6f')
-
-        print 'Done with %s (%d)' % (self.sname, self.sid)
+        np.savetxt('%s/%s-%d.txt' % (self.PERMDIR, self.sname, pid), scores, fmt='%.6f')
+        print 'Done with %s (%d - %d)' % (self.sname, self.sid, self.pid)
 
 
 if __name__ == '__main__':

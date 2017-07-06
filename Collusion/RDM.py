@@ -90,16 +90,17 @@ class RDMPixel(RDM):
     representation = None
     dsm = None
 
-    def __init__(self, distance, featureset, shuffle):
+    def __init__(self, distance, featureset, shuffle, load_representation=True):
         RDM.__init__(self, distance, featureset, shuffle)
         self.representation = np.zeros((419, 51529))
-        for i, fname in enumerate(os.listdir('%s/DNN/imagesdone/' % self.DATADIR)):
-            self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
-        self.representation = self.representation[self.reorder_dnn_to_categories]
+        if load_representation:
+            for i, fname in enumerate(os.listdir('%s/DNN/imagesdone/' % self.DATADIR)):
+                self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
+            self.representation = self.representation[self.reorder_dnn_to_categories]
 
-        if self.shuffle:
-            new_order = np.random.permutation(range(self.representation.shape[0]))
-            self.representation = self.representation[new_order]
+            if self.shuffle:
+                new_order = np.random.permutation(range(self.representation.shape[0]))
+                self.representation = self.representation[new_order]
 
     def compute_dsm(self):
         self.dsm = scipydist.squareform(scipydist.pdist(self.representation, self.distance))
@@ -124,18 +125,19 @@ class RDMDNN(RDM):
     dsm = {}
     layers = None
 
-    def __init__(self, distance, np_activation_data, featureset, shuffle):
+    def __init__(self, distance, np_activation_data, featureset, shuffle, load_representation=True):
         RDM.__init__(self, distance, featureset, shuffle)
 
         self.layers = os.listdir('%s/DNN/activations/%s' % (self.CODEDIR, np_activation_data))
         self.representation = {}
-        for layer in self.layers:
-            self.representation[layer] = np.load('%s/DNN/activations/%s/%s/activations.npy' % (self.CODEDIR, np_activation_data, layer))
-            self.representation[layer] = self.representation[layer][self.reorder_dnn_to_categories]
+        if load_representation:
+            for layer in self.layers:
+                self.representation[layer] = np.load('%s/DNN/activations/%s/%s/activations.npy' % (self.CODEDIR, np_activation_data, layer))
+                self.representation[layer] = self.representation[layer][self.reorder_dnn_to_categories]
 
-            if self.shuffle:
-                new_order = np.random.permutation(range(self.representation[layer].shape[0]))
-                self.representation[layer] = self.representation[layer][new_order]
+                if self.shuffle:
+                    new_order = np.random.permutation(range(self.representation[layer].shape[0]))
+                    self.representation[layer] = self.representation[layer][new_order]
 
     def compute_dsm(self):
         for layer in self.layers:
@@ -167,6 +169,7 @@ class RDMBrain(RDM):
     suffix = ''
 
     def __init__(self, distance, featureset, sid, shuffle):
+        print 'WARNING: For brain response distances we use Euclidean distance because brain responses are scalars'
         RDM.__init__(self, distance, featureset, shuffle)
         subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
         sfile = subjects[sid]
@@ -193,7 +196,8 @@ class RDMBrain(RDM):
             return None
 
         for p in range(nprobes):
-            sm = scipydist.squareform(scipydist.pdist(self.representation[:, p].reshape((nstim, 1)), self.distance))
+            #sm = scipydist.squareform(scipydist.pdist(self.representation[:, p].reshape((nstim, 1)), self.distance))
+            sm = scipydist.squareform(scipydist.pdist(self.representation[:, p].reshape((nstim, 1)), 'euclidean'))
             np.savetxt('%s%s/numbers/brain-%s-%d.txt' % (self.OUTDIR, self.suffix, self.subject['name'], p), sm, fmt='%.3f')
 
     def compute_dsm(self, pid):
@@ -201,14 +205,22 @@ class RDMBrain(RDM):
             new_order = np.random.permutation(range(self.representation.shape[0]))
             self.representation = self.representation[new_order]
         nstim = self.representation.shape[0]
-        return scipydist.squareform(scipydist.pdist(self.representation[:, pid].reshape((nstim, 1)), self.distance))
+        #return scipydist.squareform(scipydist.pdist(self.representation[:, pid].reshape((nstim, 1)), self.distance))
+        return scipydist.squareform(scipydist.pdist(self.representation[:, pid].reshape((nstim, 1)), 'euclidean'))
 
     def save_dsm(self):
         raise Exception("save_dsm() is not in use for Brain RDM, use compute_and_save_batch_dsm() instead")
 
     def load_dsm(self):
         raise Exception("load_dsm() is not in use for Brain RDM")
-        
+
+    def return_dsm(self, pid):
+        if self.shuffle:
+            raise Exception("return_dsm() for Brain RDM cannot be used in shuffle=True mode, use compute_dsm() instead")
+        else:
+            return np.loadtxt('%s/RSA/%s.%s%s/numbers/brain-%s-%d.txt' % (self.DATADIR, self.featureset, self.distance,
+                                                                         self.suffix, self.subject['name'], pid))
+
     def plot_dsm(self):
         raise Exception("plot_dsm() is not in use for Brain RDM")
 
