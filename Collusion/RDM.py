@@ -56,7 +56,7 @@ class RDM:
 
         # create the reordering from dnn order to order by category
         self.reorder_dnn_to_categories = []
-        for s in sorted(set(stimulation_stimuli)):
+        for s in sorted(stimulation_stimuli):
             for i in np.where(self.dnn_stimuli == s)[0]:
                 self.reorder_dnn_to_categories.append(i)
 
