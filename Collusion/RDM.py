@@ -51,13 +51,13 @@ class RDM:
                 self.reorder_stimulation_to_categories.append(i)
 
         # list of stimuli used to extract DNN activations
-        dnn_stimuli = np.loadtxt('%s/DNN/imagesdone.txt' % self.DATADIR, dtype={'names': ('stimulus', 'class'), 'formats': ('S10', 'i1')})
-        dnn_stimuli = np.array([x[0].split('.')[0] for x in dnn_stimuli])
+        self.dnn_stimuli = np.loadtxt('%s/DNN/imagesdone.txt' % self.DATADIR, dtype={'names': ('stimulus', 'class'), 'formats': ('S10', 'i1')})
+        self.dnn_stimuli = np.array([x[0].split('.')[0] for x in self.dnn_stimuli])
 
         # create the reordering from dnn order to order by category
         self.reorder_dnn_to_categories = []
-        for s in sorted(stimulation_stimuli):
-            for i in np.where(dnn_stimuli == s)[0]:
+        for s in sorted(set(stimulation_stimuli)):
+            for i in np.where(self.dnn_stimuli == s)[0]:
                 self.reorder_dnn_to_categories.append(i)
 
         # create the directory to store results
@@ -94,8 +94,10 @@ class RDMPixel(RDM):
         RDM.__init__(self, distance, featureset, shuffle)
         self.representation = np.zeros((419, 51529))
         if load_representation:
-            for i, fname in enumerate(os.listdir('%s/DNN/imagesdone/' % self.DATADIR)):
-                self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
+            for i, fname in enumerate(self.dnn_stimuli):
+                self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s.jpg' % (self.DATADIR, fname)))
+            #for i, fname in enumerate(sorted(os.listdir('%s/DNN/imagesdone/' % self.DATADIR))):
+            #    self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
             self.representation = self.representation[self.reorder_dnn_to_categories]
 
             if self.shuffle:
@@ -128,7 +130,7 @@ class RDMDNN(RDM):
     def __init__(self, distance, np_activation_data, featureset, shuffle, load_representation=True):
         RDM.__init__(self, distance, featureset, shuffle)
 
-        self.layers = os.listdir('%s/DNN/activations/%s' % (self.CODEDIR, np_activation_data))
+        self.layers = sorted(os.listdir('%s/DNN/activations/%s' % (self.CODEDIR, np_activation_data)))
         self.representation = {}
         if load_representation:
             for layer in self.layers:
@@ -171,7 +173,7 @@ class RDMBrain(RDM):
     def __init__(self, distance, featureset, sid, shuffle):
         print 'WARNING: For brain response distances we use Euclidean distance because brain responses are scalars'
         RDM.__init__(self, distance, featureset, shuffle)
-        subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
+        subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset)))
         sfile = subjects[sid]
         s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, featureset, sfile))
         self.subject['data'] = s['s']['data'][0][0]
