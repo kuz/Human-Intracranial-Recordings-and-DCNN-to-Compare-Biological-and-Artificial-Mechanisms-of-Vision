@@ -96,8 +96,6 @@ class RDMPixel(RDM):
         if load_representation:
             for i, fname in enumerate(self.dnn_stimuli):
                 self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s.jpg' % (self.DATADIR, fname)))
-            #for i, fname in enumerate(sorted(os.listdir('%s/DNN/imagesdone/' % self.DATADIR))):
-            #    self.representation[i] = np.ravel(imread('%s/DNN/imagesdone/%s' % (self.DATADIR, fname)))
             self.representation = self.representation[self.reorder_dnn_to_categories]
 
             if self.shuffle:
@@ -178,6 +176,7 @@ class RDMBrain(RDM):
         s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (self.DATADIR, featureset, sfile))
         self.subject['data'] = s['s']['data'][0][0]
         self.subject['name'] = s['s']['name'][0][0][0]
+        print self.subject['name']
         self.representation = self.subject['data'][self.reorder_stimulation_to_categories]
 
         # disable the poison pill

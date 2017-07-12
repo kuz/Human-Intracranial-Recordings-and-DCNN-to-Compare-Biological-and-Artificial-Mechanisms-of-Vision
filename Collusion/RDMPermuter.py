@@ -55,6 +55,7 @@ class RDMPermuter:
     def run(self):
 
         # load true RDM
+        print self.sid, self.pid, self.sname
         rdm_brain = RDMBrain(self.distance, self.featureset, self.sid, False)
         brain_dsm = rdm_brain.return_dsm(self.pid)
 
