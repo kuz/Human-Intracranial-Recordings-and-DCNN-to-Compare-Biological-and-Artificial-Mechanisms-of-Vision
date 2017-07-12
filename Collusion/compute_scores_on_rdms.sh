@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ~/venvs/py27/bin/activate
+#source ~/venvs/py27/bin/activate
 
 FEATURESET=$1
 DISTANCE=$2
@@ -27,7 +27,10 @@ nfiles=$(ls -l ../../Data/Intracranial/Processed/$FEATURESET/*.mat | wc -l)
 for i in $(seq 1 $nfiles)
 do
     let i=i-1
-    srun -N 1 --partition=long --cpus-per-task=1 --mem=2000 --exclude=idu[38-41] python RSAScorer.py -f $FEATURESET -d $DISTANCE -i $i -o $ONWHAT -t $THRESHOLD &
+    # EEnet
+    #srun -N 1 --partition=long --cpus-per-task=1 --mem=2000 --exclude=idu[38-41] python RSAScorer.py -f $FEATURESET -d $DISTANCE -i $i -o $ONWHAT -t $THRESHOLD &
+    # Rocket
+    srun --partition=long,phi,main -c 1 --mem=2000 -t 96:00:00 python RSAScorer.py -f $FEATURESET -d $DISTANCE -i $i -o $ONWHAT -t $THRESHOLD &
     sleep 2
 done
 

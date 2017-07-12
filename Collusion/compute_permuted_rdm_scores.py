@@ -18,16 +18,22 @@ onwhat = str(args.onwhat)
 threshold = str(args.threshold)
 DATADIR = '../../Data'
 
-subjects = os.listdir('%s/Intracranial/Processed/%s/' % (DATADIR, featureset))
+subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (DATADIR, featureset)))
 for sid in range(len(subjects)):
     s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (DATADIR, featureset, subjects[sid]))
     for pid in range(len(np.ravel(s['s']['probes'][0][0][0][0][3]))):
+        
         #print 'Processing subject %d probe %d' % (sid, pid)
         #Popen(['srun -N 1 --partition=long --cpus-per-task=1 --mem=4000 -t 24:00:00 python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s' % (sid, pid, featureset, distance, onwhat, threshold)], shell='True', stdin=None, stdout=None, stderr=None, close_fds=True)
         #time.sleep(15)
+        
         print "echo 'Processing subject %d probe %d'" % (sid, pid)
-        print 'srun -N 1 --partition=long --cpus-per-task=2 --mem=8000 -t 24:00:00 --exclude idu[38-41] python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s &' % (sid, pid, featureset, distance, onwhat, threshold)
-        print 'sleep 3'
+        # EENet
+        #print 'srun -N 1 --partition=long --cpus-per-task=2 --mem=8000 -t 24:00:00 --exclude idu[38-41] python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s &' % (sid, pid, featureset, distance, onwhat, threshold)
+        #print 'sleep 3'
+        # Rocket
+        print 'srun --partition=long,phi,main -c 2 --mem=8000 -t 96:00:00 python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s &' % (sid, pid, featureset, distance, onwhat, threshold)
+        print 'sleep 2'
 
 print 'echo "All sent"'
 
