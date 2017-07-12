@@ -43,7 +43,7 @@ class RDMPermuter:
         self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
 
         # load list of subjects
-        subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset))
+        subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset)))
         self.sname = os.path.splitext(subjects[self.sid])[0]
 
         # create output directory if does not exist
