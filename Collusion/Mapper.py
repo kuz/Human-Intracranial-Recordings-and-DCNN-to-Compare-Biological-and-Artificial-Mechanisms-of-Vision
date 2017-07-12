@@ -48,7 +48,7 @@ class Mapper:
             self.PERMDIR = None
         else:
             raise Exception('Unknown backbone %s' % self.backbone)
-        self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset))
+        self.subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset)))
         print 'Initialized Mapper with:'
         print '\tSCOREDIR %s' % self.SCOREDIR
 
@@ -105,7 +105,6 @@ class Mapper:
             pvals[sname] = np.ones(scores[sname]['scores'].shape)
             for pid in range(len(areas)):
                 print 'Computing p-value for subject %s probe %d' % (sname, pid)
-                #permutation_scores = np.loadtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
                 permutation_scores = np.genfromtxt('%s/%s-%d.txt' % (self.PERMDIR, sname, pid))
                 pvals[sname][pid] = np.sum(permutation_scores >= scores[sname]['scores'][pid], axis=0) / float(permutation_scores.shape[0])
 

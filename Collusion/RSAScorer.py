@@ -50,7 +50,7 @@ class RSAScorer:
         self.threshold = threshold
 
         # read list of subjects
-        self.subjects = os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset))
+        self.subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset)))
         self.sname = self.subjects[self.sid].split('.')[0]
 
         #if shuffle:
@@ -58,13 +58,12 @@ class RSAScorer:
 
         # load layer RDMs including the "layer 0" (pixel space)
         for layer in self.layers:
-            self.dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s.%s%s/numbers/dnn-%s.txt' %
-                                             (self.featureset, self.distance, self.suffix, layer))
+            self.dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s.%s%s/numbers/dnn-%s.txt' % (self.featureset, self.distance, self.suffix, layer))
 
         # load brain response dissimilarity matrices
-        listing = glob.glob('%s/RSA/%s.%s%s/numbers/brain-%s-*.txt' %
-                            (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname))
-        for pid, filename in enumerate(listing):
+        listing = sorted(glob.glob('%s/RSA/%s.%s%s/numbers/brain-%s-*.txt' % (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname)))
+        for pid in range(len(listing)):
+            filename = '%s/RSA/%s.%s%s/numbers/brain-%s-%d.txt' % (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname, pid)
             self.brain_dsm[pid] = np.loadtxt(filename)
 
         # create a directory
@@ -115,7 +114,6 @@ class RSAScorer:
 
     def compute_all_correlation_scores(self):
         nprobes = len(self.brain_dsm)
-        #nstim = self.brain_dsm[0].shape[0]
         self.scores = np.zeros((nprobes, len(self.layers)))
         for lid, layer in enumerate(self.layers):
             for pid in range(nprobes):
