@@ -1,6 +1,5 @@
 %
-% Assemble data about each subject into a Matlab data structure with fixed
-% format
+% Reshape and process raw data into nicely structured files
 %
 
 addpath('./mniplots')
@@ -8,7 +7,6 @@ addpath('./mniplots')
 % load the list of subjects
 subjects = textread('subjects.txt', '%s', 'delimiter', '\n');
 
-% load the sequence of stimuli
 stimseq = textread('stimsequence.txt', '%s', 'delimiter', '\n');
 stimgroups = textread('stimgroups.txt', '%d', 'delimiter', '\n');
 
@@ -28,13 +26,11 @@ for subject = subjects'
         disp(['  ERROR: ' filename ' does not exist! Moving on.'])
         continue
     end
-    
+
     % pick the timestamps corrsponding to the moments when images from the
     % stimulus sequence were shown
-    picevents = m_events(m_events(:, 2) == 10 | m_events(:, 2) == 20 | ...
-                         m_events(:, 2) == 30 | m_events(:, 2) == 40 | ...
-                         m_events(:, 2) == 50 | m_events(:, 2) == 80 | ...
-                         m_events(:, 2) == 90, :);
+    picevents = m_events(m_events(:, 2) == 10 | m_events(:, 2) == 20 | m_events(:, 2) == 30 | ...
+                         m_events(:, 2) == 40 | m_events(:, 2) == 50, :);
     pictimes = picevents(:, 1);
     picstims = picevents(:, 2);
     
@@ -96,8 +92,7 @@ for subject = subjects'
     % take list of possible rod names
     rod_names = unique(selected_rod_names, 'stable');
 
-    % clazily ugly code to extract probe indices for each rod and MNI
-    % coordinates
+    % crazy ugly code to extract probe indices for each rod and MNI coordinates
     active_coords = struct();
     active_coords.rod_names = {};
     active_coords.probe_ids = [];
@@ -129,8 +124,7 @@ for subject = subjects'
             probe_name = probe_name(length(rod_name)+1:end-1);
             probe_num = str2num(probe_name);
             
-            % sometimes first probes miss the id, assign the next
-            % consequitive number
+            % sometimes first probes miss the id, assign the next consequitive number
             if isempty(probe_num)
                 probe_num = last_num + 1;
             end
@@ -165,18 +159,27 @@ for subject = subjects'
     
     s.probes = active_coords;
     
+    % step size for downsampling
+    if s_fs == 512
+        samplestep = 1;
+    elseif s_fs == 1024
+        samplestep = 2;
+    elseif s_fs == 2048
+        samplestep = 4;
+    end
+
     % Stimulus is shown for 200ms (102 tp). We extract the -500 ms (256 tp)
     % as baseline and 1000ms (512 tp) of signal after stimulus onset 
     s.data = zeros(length(stimseq), length(active_coords.probe_ids), 768);
     for sid = 1:length(stimseq)
-        s.data(sid, :, :) = m_data(m_data_ids, (pictimes(sid) - 256):(pictimes(sid) + 511));
+        s.data(sid, :, :) = m_data(m_data_ids, (pictimes(sid) - 256 * samplestep):samplestep:(pictimes(sid) + 512 * samplestep - 1));
     end
     
     % add some metadata
     s.name = subject;
     
     % store the data
-    save(['../../Data/Intracranial/Processed/LFP/' subject '.mat'], 's');
+    save(['../../Data/Intracranial/Processed/LFP_5c/' subject '.mat'], 's');
     
     % drop all variables which are relevant to this subject
     clearvars -except subjects stimseq stimgroups
