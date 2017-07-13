@@ -3,8 +3,13 @@ Extract Brain Activations
 
 To prepare the data for an experiment do the following in correct order:  
 
-* Check the `indata` parameters in `preprocess_compute_responsiveness.m`
-* Run `./preprocess_compute_responsiveness_alpha.sh`
+1. `matlab -nojvm -nodisplay -nosplash -r "structured_to_processed; exit"` to extract chunks of LFP recordings for each of the stimuli (28 min)  
+2. Drop trials with artifacts: `matlab -nojvm -nodisplay -nosplash -r "indata = 'LFP_5c'; preprocess_lfp_artifacts; exit"` (26 min)  
+3. Bipolar referencing: `matlab -nojvm -nodisplay -nosplash -r "indata = 'LFP_5c_artif'; preprocess_lfp_to_bipolar; exit"` (13 min)  
+4. Supply with area number: `matlab -nojvm -nodisplay -nosplash -r "indata = 'LFP_5c_artif_bipolar'; preprocess_add_area; exit"` (12 min)  
+5. Compute electrode responsiveness `./preprocess_compute_responsiveness.sh` ( with 120 threads)  
+6. 
+
 * Run `matlab -nojvm -nodisplay -nosplash -r "indata = 'LFP_bipolar_noscram_artif_brodmann'; window = [150 350]; bandname = 'alpha'; preprocess_filter_unresponsive; exit"`
 * `cd feature_extractors`
 * Check the parameters inside `extract_meanalpha.sh`

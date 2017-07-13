@@ -1,6 +1,18 @@
+% variables
+ei = exist('indata') == 1;
+if ei ~= 1
+    disp('Required varibles are not set! Terminating')
+    exit
+end
+
+
 % parameters
-indata = 'LFP_noscram';
-outdata = 'LFP_bipolar_noscram';
+outdata = [indata '_bipolar'];
+if exist(['../../Data/Intracranial/Processed/' outdata], 'dir') == 7
+    disp(['WARNING: Directory exists: ' outdata])
+else
+    mkdir(['../../Data/Intracranial/Processed/' outdata])
+end
 
 % load subject list
 listing = dir(['../../Data/Intracranial/Processed/' indata '/*.mat']);

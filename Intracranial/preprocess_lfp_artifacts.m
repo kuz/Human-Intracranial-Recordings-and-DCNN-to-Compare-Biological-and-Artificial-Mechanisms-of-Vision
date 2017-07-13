@@ -1,6 +1,17 @@
+% variables
+ei = exist('indata') == 1;
+if ei ~= 1
+    disp('Required varibles are not set! Terminating')
+    exit
+end
+
 % paramters
-indata = 'LFP_bipolar_noscram';
-outdata = 'LFP_bipolar_noscram_artif';
+outdata = [indata '_artif'];
+if exist(['../../Data/Intracranial/Processed/' outdata], 'dir') == 7
+    disp(['WARNING: Directory exists: ' outdata])
+else
+    mkdir(['../../Data/Intracranial/Processed/' outdata])
+end
 threshold = 10.0;
 
 % load subject list
@@ -31,8 +42,7 @@ for sfile = listing'
     
     %
     % This chunk of code detects and drops individual "trials", this will
-    % result in different number of trials per probe, but that is probably
-    % ok
+    % result in different number of trials per probe, but that is probably ok
     %
     for i = 1:size(stds, 2)
         bad_trials = maxs(:, i) > avg_stds(i) * threshold;
