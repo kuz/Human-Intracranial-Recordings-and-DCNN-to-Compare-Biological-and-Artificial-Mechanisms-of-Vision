@@ -17,7 +17,6 @@ w_sta_t = round(w_sta_ms / 1000 * 512);
 w_end_t = round(w_end_ms / 1000 * 512);
 outdata = [indata '_w' num2str(w_sta_ms) '_' bandname '_responsive_' num2str(range(1))];
 
-
 % load third party code
 addpath('lib')
 addpath('lib/spectra')
@@ -76,8 +75,8 @@ for si = 1:length(listing)
             fqsignal = power(:, from:till);
             
             % store frequency means
-            baseline_band_means(stimulus) = mean2(baseline);
-            fqsignal_band_means(stimulus) = mean2(fqsignal);
+            baseline_band_means(stimulus) = mean(mean(baseline));
+            fqsignal_band_means(stimulus) = mean(mean(fqsignal));
             
         end
         
