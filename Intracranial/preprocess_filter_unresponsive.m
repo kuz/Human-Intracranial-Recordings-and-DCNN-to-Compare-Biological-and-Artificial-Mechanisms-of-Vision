@@ -14,10 +14,9 @@ end
 outdata = [indata '_w' num2str(window(1)) '_' bandname '_resppositive'];
 if exist(['../../Data/Intracranial/Processed/' outdata], 'dir') == 7
     disp(['Directory exists: ' outdata ', exiting...']);
-    exit()
+else
+    mkdir(['../../Data/Intracranial/Processed/' outdata]);
 end
-mkdir(['../../Data/Intracranial/Processed/' outdata]);
-
 
 % load data
 results = zeros(0, 6);
@@ -56,8 +55,8 @@ for si = 1:length(listing)
 
     % store the data
     save(['../../Data/Intracranial/Processed/' outdata '/' sfile.name], 's');
-    clearvars -except range freqlimits indata outdata listing results nsurvivors
+    clearvars -except range freqlimits indata outdata listing results nsurvivors bandname window
     
 end
 
-disp(['In total survived ' num2str(nsurvivors) ' probes'])
+disp(['In ' bandname ' ' num2str(window(1)) '-' num2str(window(2)) 'ms survived ' num2str(nsurvivors) ' probes'])

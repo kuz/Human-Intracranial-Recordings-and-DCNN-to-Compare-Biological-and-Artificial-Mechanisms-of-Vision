@@ -1,0 +1,24 @@
+Command: Code/Intracranial $ ./preprocess_filter_unresponsive.sh
+Took:    18 minutes
+-------------------------------------------------------------------
+- partial -
+
+In theta 50-250ms survived 1484 probes
+In theta 150-350ms survived 1835 probes
+In theta 250-450ms survived 1680 probes
+
+In alpha 50-250ms survived 773 probes
+In alpha 150-350ms survived 778 probes
+In alpha 250-450ms survived 777 probes
+
+In beta 50-250ms survived 364 probes
+In beta 150-350ms survived 347 probes
+In beta 250-450ms survived 397 probes
+
+In lowgamma 50-250ms survived 510 probes
+In lowgamma 150-350ms survived 649 probes
+In lowgamma 250-450ms survived 705 probes
+
+In highgamma 50-250ms survived 667 probes
+In highgamma 250-450ms survived 962 probes
+In highgamma 150-350ms survived 917 probes

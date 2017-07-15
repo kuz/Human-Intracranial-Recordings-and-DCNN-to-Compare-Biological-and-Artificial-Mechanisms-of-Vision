@@ -1,0 +1,4 @@
+Command: Code/Intracranial $ ./preprocess_compute_responsiveness.sh 
+Took:    ~12 hours with 120 threads
+-------------------------------------------------------------------
+- too long -

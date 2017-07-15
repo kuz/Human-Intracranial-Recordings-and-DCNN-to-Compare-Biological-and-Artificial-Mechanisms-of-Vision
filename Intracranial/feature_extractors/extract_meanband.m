@@ -24,6 +24,7 @@ else
 end
 
 % load third party code
+addpath('../lib')
 addpath('../lib/spectra')
 
 % load subject list
@@ -94,7 +95,7 @@ for sfile = listing'
                 hhz = bins(bid, 2) - binshift;
                 binbaseline = baseline(lhz:hhz, :);
                 binsignal = fqsignal(lhz:hhz, :);
-                ratios = [ratios, mean2(binsignal) / mean2(binbaseline)];
+                ratios = [ratios, mean(mean(binsignal)) / mean(mean(binbaseline))];
             end
             meanband(stimulus, probe) = max(ratios);
             
