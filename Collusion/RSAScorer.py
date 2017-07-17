@@ -42,12 +42,13 @@ class RSAScorer:
     #: Final results
     scores = None
 
-    def __init__(self, featureset, distance, sid, scope, threshold):
+    def __init__(self, featureset, distance, sid, scope, threshold, network):
         self.featureset = featureset
         self.distance = distance
         self.sid = sid
         self.scope = scope
         self.threshold = threshold
+        self.network = network
 
         # read list of subjects
         self.subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, featureset)))
@@ -58,7 +59,10 @@ class RSAScorer:
 
         # load layer RDMs including the "layer 0" (pixel space)
         for layer in self.layers:
-            self.dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s.%s%s/numbers/dnn-%s.txt' % (self.featureset, self.distance, self.suffix, layer))
+            if layer == 'pixels':
+                self.dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s.%s%s/numbers/dnn-%s.txt' % (self.featureset, self.distance, self.suffix, layer))
+            else:
+                self.dnn_dsm[layer] = np.loadtxt('../../Data/RSA/%s.%s%s/numbers/dnn-%s-%s.txt' % (self.featureset, self.distance, self.suffix, layer, self.network))
 
         # load brain response dissimilarity matrices
         listing = sorted(glob.glob('%s/RSA/%s.%s%s/numbers/brain-%s-*.txt' % (self.DATADIR, self.featureset, self.distance, self.suffix, self.sname)))
@@ -67,7 +71,7 @@ class RSAScorer:
             self.brain_dsm[pid] = np.loadtxt(filename)
 
         # create a directory
-        self.OUTDIR = '%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s.%s%s' % (self.DATADIR, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        self.OUTDIR = '%s/Intracranial/Probe_to_Layer_Maps/rsa_%s.%s%s.%s.%s%s' % (self.DATADIR, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
         try:
             os.mkdir(self.OUTDIR)
         except:
@@ -141,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--onwhat', dest='onwhat', type=str, required=True, help='image or matrix depending on which you to compute the correlation on')
     #parser.add_argument('-s', '--shuffle', dest='shuffle', type=bool, required=False, default=False, help='Whether to shuffle data for a permutation test')
     parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=True, help='Significance level a score must have to be counter (1.0 to store all)')
+    parser.add_argument('-n', '--network', dest='network', type=str, required=True, help='RDM of activiation of which NN are to be used to compute the scores')
     args = parser.parse_args()
     sid = int(args.sid)
     featureset = str(args.featureset)
@@ -148,8 +153,9 @@ if __name__ == '__main__':
     #shuffle = bool(args.shuffle)
     onwhat = str(args.onwhat)
     threshold = float(args.threshold)
+    network = str(args.network)
 
-    rsascorer = RSAScorer(featureset, distance, sid, onwhat, threshold)
+    rsascorer = RSAScorer(featureset, distance, sid, onwhat, threshold, network)
     rsascorer.compute_all_correlation_scores()
     rsascorer.store_all_correlation_scores()
 
