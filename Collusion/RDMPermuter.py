@@ -30,7 +30,7 @@ class RDMPermuter:
     pid = None
     
 
-    def __init__(self, sid, pid, backbone, featureset, distance, suffix, scope, threshold):
+    def __init__(self, sid, pid, backbone, featureset, distance, suffix, scope, threshold, network):
         self.sid = sid
         self.pid = pid
         self.backbone = backbone
@@ -39,8 +39,9 @@ class RDMPermuter:
         self.suffix = suffix
         self.scope = scope
         self.threshold = threshold
+        self.network = network
 
-        self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+        self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
 
         # load list of subjects
         subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset)))
@@ -63,7 +64,7 @@ class RDMPermuter:
         layers = ['pixels', 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
         pixel_rdm = RDMPixel(self.distance, self.featureset, shuffle=False, load_representation=False)
         pixel_rdm.load_dsm()
-        layer_rdm = RDMDNN(self.distance, 'numpy.reference', self.featureset, shuffle=False, load_representation=False)
+        layer_rdm = RDMDNN(self.distance, self.network, self.featureset, shuffle=False, load_representation=False)
         layer_rdm.load_dsm()
         
         # generate random brain RDM permutations into 10000 x 72631 matrix
@@ -100,6 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--distance', dest='distance', type=str, required=True, help='The distance metric to use')
     parser.add_argument('-o', '--onwhat', dest='onwhat', type=str, required=True, help='image or matrix depending on which you to compute the correlation on')
     parser.add_argument('-t', '--threshold', dest='threshold', type=float, required=True, help='Significance level a score must have to be counter (1.0 to store all)')
+    parser.add_argument('-n', '--network', dest='network', type=str, required=True, help='Which activations of DNN to use')
         
     args = parser.parse_args()
     sid = int(args.sid)
@@ -110,8 +112,9 @@ if __name__ == '__main__':
     suffix = ''
     scope = str(args.onwhat)
     threshold = float(args.threshold)
+    network = str(args.network)
 
-    permuter = RDMPermuter(sid, pid, backbone, featureset, distance, suffix, scope, threshold)
+    permuter = RDMPermuter(sid, pid, backbone, featureset, distance, suffix, scope, threshold, network)
     permuter.run()
 
 
