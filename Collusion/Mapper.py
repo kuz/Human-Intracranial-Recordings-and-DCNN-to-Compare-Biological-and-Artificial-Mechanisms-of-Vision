@@ -6,6 +6,7 @@ import scipy.io as sio
 from Plotter import Plotter
 from scipy.stats import spearmanr
 from scipy.stats import mannwhitneyu
+import pdb
 
 class Mapper:
 
@@ -31,7 +32,7 @@ class Mapper:
     nareas = 49
     nlayers = 9
 
-    def __init__(self, backbone, featureset, distance, suffix, scope, threshold, statistic):
+    def __init__(self, backbone, featureset, distance, suffix, scope, threshold, statistic, network):
         self.backbone = backbone
         self.featureset = featureset
         self.distance = distance
@@ -39,18 +40,19 @@ class Mapper:
         self.scope = scope
         self.threshold = threshold
         self.statistic = statistic
+        self.network = network
+
 
         if self.backbone == 'rsa':
-            self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
-            self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+            self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s.%s%s.%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
+            self.PERMDIR = '%s/Intracranial/Probe_to_Layer_Maps/Permutation/%s_%s.%s%s.%s.%s%s' % (self.DATADIR, self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'))
         elif self.backbone == 'lp':
             self.SCOREDIR = '%s/Intracranial/Probe_to_Layer_Maps/%s_%s' % (self.DATADIR, self.backbone, self.featureset)
             self.PERMDIR = None
         else:
             raise Exception('Unknown backbone %s' % self.backbone)
         self.subjects = sorted(os.listdir('%s/Intracranial/Processed/%s/' % (self.DATADIR, self.featureset)))
-        print 'Initialized Mapper with:'
-        print '\tSCOREDIR %s' % self.SCOREDIR
+        print 'SCOREDIR: %s' % self.SCOREDIR
 
     def _collect_scores(self):
         allscores = {}
@@ -69,8 +71,6 @@ class Mapper:
             else:
                 scores = scores.reshape((len(areas), self.nlayers))
             allscores[sname] = {'scores': scores, 'areas': areas, 'mni': mni}
-        print 'Total probe number: %d' % nprobes
-        print 'BA17 probe number: %d' % nprobes_in17
         return allscores
 
     def _compute_pvals(self):
@@ -180,40 +180,22 @@ class Mapper:
         #else:
         #    raise Exception('Unknown statistic %s' % self.statistic)
 
-        # normalize by the number of significant probes in an area
-        score_per_arealayer_normalized = score_per_arealayer / np.tile(n_sig_per_area, (self.nlayers, 1)).T
-        score_per_arealayer_normalized[np.isinf(score_per_arealayer_normalized)] = 0.0
-        score_per_arealayer_normalized = np.nan_to_num(score_per_arealayer_normalized)
-
-        # add suffix to the file name if filtered by permutation test results
-        permfiltered = 'permfiltered' if filter_by_permutation else ''
-
-        # different filenames for different scoring backbone methods
-        if self.backbone == 'rsa':
-            filename = '%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
-        elif self.backbone == 'lp':
-            filename = '%s_%s%s.png' % (self.backbone, self.featureset, permfiltered)
-        else:
-            raise Exception('Unknown backbone %s' % self.backbone)
 
         #
         # Stats
         #
+        stats = {}
         visual_areas = [17, 18, 19, 37, 20]
 
+        # normalize scores by the number of significant probes in an area
+        score_per_arealayer_normalized = score_per_arealayer / np.tile(n_sig_per_area, (self.nlayers, 1)).T
+        score_per_arealayer_normalized[np.isinf(score_per_arealayer_normalized)] = 0.0
+        score_per_arealayer_normalized = np.nan_to_num(score_per_arealayer_normalized)
 
-        # diagonality with weighed spearman
-        """
-        areas = []
-        layers = []
-        weights = []
-        for a, aid in enumerate(visual_areas):
-            for lid in range(self.nlayers):
-                for s in single_scores[(aid, lid)]:
-                    areas.append(a)
-                    layers.append(lid)
-                    weights.append(s)
-        """
+
+        #
+        # Global stats
+        #
 
         # diagonality
         n_per_visual = n_per_arealayer[visual_areas, :]
@@ -226,53 +208,22 @@ class Mapper:
                     areas.append(a)
                     layers.append(l)
         diagonality = spearmanr(areas, layers)
+        stats['alignment'] = {'rho': diagonality[0], 'pval': diagonality[1]}
         title = 'Alignment: %.4f (p-value: %.5f)' % (diagonality[0], diagonality[1]) 
-        print title
 
         # volume
         volume = np.sum(score_per_arealayer, 1) / n_tot_per_area
+        volume[np.isnan(volume)] = 0.0
         visual_volume = np.sum(score_per_arealayer[visual_areas], 1) / n_tot_per_area[visual_areas]
-        volume[np.isnan(volume)] = 0
-        visual_volume[np.isnan(visual_volume)] = 0
+        visual_volume[np.isnan(visual_volume)] = 0.0
+        stats['volume'] = {'allareas': volume, 'visual': visual_volume}
 
-        """# specifity to visual areas
-        total_volume = np.sum(volume)
-        specificity_to_visual = visual_volume / total_volume
-        print 'Visual specifity: %.4f' % specificity_to_visual"""
+        # specifity to visual areas
+        specificity_to_visual = np.sum(visual_volume) / np.sum(volume)
+        stats['visual_specifity'] = specificity_to_visual
 
-        """# high / (high + low) ratio per area
-        print 'High / (H+L):'
-        for a in visual_areas:
-            high_visual_volume = np.sum(score_per_arealayer_normalized[a, [5,6,7]])
-            low_visual_volume = np.sum(score_per_arealayer_normalized[a, [1,2,3]])
-            ratio = high_visual_volume / float(high_visual_volume + low_visual_volume)
-            if np.isnan(ratio): ratio = 0.0
-            print '\t%d: %.4f' % (a, ratio)"""
-
-        # volume per area
         """
-        print 'Volume:'
-        for a in visual_areas:
-            print '\t%d: %.4f' % (a, np.sum(volume[a]))
-        """
-
-        """# visual specificity per layer
-        specificity_to_visual_per_layer = np.sum(score_per_arealayer_normalized[visual_areas], 0) / np.sum(score_per_arealayer_normalized, 0)
-        print 'Specificity per layer'
-        for l in range(self.nlayers):
-            print 'L%d: %.4f' % (l, specificity_to_visual_per_layer[l])"""
-
-        # visual volume per layer
-        #"""
-        visual_scores = score_per_arealayer_normalized[visual_areas, :]
-        visual_layer_volume = np.sum(visual_scores, 0)
-        print 'Volume per layer'
-        for l in range(self.nlayers):
-            print 'L%d: %.4f' % (l, visual_layer_volume[l])
-        #"""
-
         # gamma in convolutional vs. theta-alpha-beta in fully connected
-        """
         convs = np.ravel(score_per_visual_normalized[:, [1,2,3,4,5]])
         convs = convs[convs > 0.0]
         fcs = np.ravel(score_per_visual_normalized[:, [6,7]])
@@ -280,16 +231,57 @@ class Mapper:
         print 'FC Volume', np.sum(fcs)
         print 'Conv Volume', np.sum(convs)
         """
-        
 
-        # generate and store plot
-        if only_visual:
-            filename = 'visual_' + filename
-            Plotter.xlayer_yarea_zscore_visual('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers,
-                                                n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
+
+        # 
+        # per Area stats
+        #
+        stats['per_area'] = {'hhl_ratio': {}, 'volume': {}}
+        
+        for a in visual_areas:
+
+            # high / (high + low) ratio
+            high_visual_volume = np.sum(score_per_arealayer_normalized[a, [5,6,7]])
+            low_visual_volume = np.sum(score_per_arealayer_normalized[a, [1,2,3]])
+            ratio = high_visual_volume / float(high_visual_volume + low_visual_volume)
+            if np.isnan(ratio): ratio = 0.0
+            stats['per_area']['hhl_ratio'][a] = ratio
+
+            # volume
+            stats['per_area']['volume'][a] = np.sum(volume[a])
+
+        #
+        # per Layer stats
+        #
+        stats['per_layer'] = {'volume': np.sum(score_per_visual_normalized, 0),
+                              'specificity': np.sum(score_per_visual_normalized, 0) / np.sum(score_per_arealayer_normalized, 0)}
+        
+        #
+        # Figure
+        #
+
+        # add suffix to the file name if filtered by permutation test results
+        permfiltered = 'permfiltered' if filter_by_permutation else ''
+
+        # different filenames for different scoring backbone methods
+        if self.backbone == 'rsa':
+            filename = '%s_%s.%s%s.%s.%s%s%s' % (self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+        elif self.backbone == 'lp':
+            filename = '%s_%s%s' % (self.backbone, self.featureset, permfiltered)
         else:
-            Plotter.xlayer_yarea_zscore('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers,
-                                        n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
+            raise Exception('Unknown backbone %s' % self.backbone)
+
+        # store stats
+        np.save('%s/Statistics/%s.npy' % (self.OUTDIR, filename), stats)
+
+        # store plots
+        Plotter.xlayer_yarea_zscore_visual('%s/Mapper/visual_%s.png' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
+        Plotter.xlayer_yarea_zscore('%s/Mapper/%s.png' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
+        #if only_visual:
+        #    filename = 'visual_' + filename
+        #    Plotter.xlayer_yarea_zscore_visual('%s/Mapper/%s.png' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
+        #else:
+        #    Plotter.xlayer_yarea_zscore('%s/Mapper/%s.png' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
 
 
     def compute_and_plot_area_mapping_per_subject(self, filter_by_permutation=False, only_visual=False):
@@ -360,7 +352,7 @@ class Mapper:
 
             # different filenames for different scoring backbone methods
             if self.backbone == 'rsa':
-                filename = '%s_%s.%s%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+                filename = '%s_%s.%s%s.%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
             elif self.backbone == 'lp':
                 filename = '%s_%s%s.png' % (self.backbone, self.featureset, permfiltered)
             else:
@@ -369,11 +361,9 @@ class Mapper:
             # generate and store plot
             if only_visual:
                 filename = 'visual_' + sname + '_' + filename
-                Plotter.xlayer_yarea_zscore_visual('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers,
-                                                    n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
+                Plotter.xlayer_yarea_zscore_visual('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
             else:
-                Plotter.xlayer_yarea_zscore('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers,
-                                            n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
+                Plotter.xlayer_yarea_zscore('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
 
     def compute_and_plot_single_mni_score(self, filter_by_permutation=False):
 
@@ -419,6 +409,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--statistic', dest='statistic', type=str, required=True, help='Type of score to compute when aggregating: varexp, corr')
     parser.add_argument('-p', '--permfilter', dest='permfilter', type=str, required=True, help='Whether to filter the results with permutation test results')
     parser.add_argument('-g', '--graph', dest='graph', type=str, required=True, help='Which graph to output: layer_area_score, mni_score, mni_layer')
+    parser.add_argument('-n', '--network', dest='network', type=str, required=True, help='Activations of which DNN are used')
     args = parser.parse_args()
 
     # check conditional requirements
@@ -436,9 +427,10 @@ if __name__ == '__main__':
     suffix = ''
     permfilter = bool(args.permfilter == 'True')
     graph = str(args.graph)
+    network = str(args.network)
 
     # initialize and run the mapper
-    mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic)
+    mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic, network)
     if graph == 'layer_area_score':
         mapper.compute_and_plot_area_mapping(permfilter, only_visual=False)
         #mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=False)
