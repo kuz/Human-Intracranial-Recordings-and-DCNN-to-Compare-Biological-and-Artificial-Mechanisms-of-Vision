@@ -9,9 +9,9 @@ paramset = 'pca250'
 # load data
 actual = []
 permuted = []
-for filename in glob.glob('../../Outcome/Permutation test/%s.%s.actual/*.txt' % (featureset, paramset)):
+for filename in sorted(glob.glob('../../Outcome/Permutation test/%s.%s.actual/*.txt' % (featureset, paramset))):
     actual += list(np.loadtxt(filename))
-for filename in glob.glob('../../Outcome/Permutation test/%s.%s.permuted/*.txt' % (featureset, paramset)):
+for filename in sorted(glob.glob('../../Outcome/Permutation test/%s.%s.permuted/*.txt' % (featureset, paramset))):
     permuted += list(np.loadtxt(filename))
 actual = np.array(actual)
 permuted = np.array(permuted)

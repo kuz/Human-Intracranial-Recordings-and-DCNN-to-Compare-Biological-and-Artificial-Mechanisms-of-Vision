@@ -10,7 +10,7 @@ featureset = 'meangamma_bipolar_noscram_artif_responsive_brodmann'
 suffix = '.permatrix.nothresh'
 
 # list of subjects
-subjects = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
+subjects = sorted(os.listdir('../../Data/Intracranial/Processed/%s/' % featureset))
 
 def collect_rhos(subjects, featureset, suffix, actual, prun):
     """
