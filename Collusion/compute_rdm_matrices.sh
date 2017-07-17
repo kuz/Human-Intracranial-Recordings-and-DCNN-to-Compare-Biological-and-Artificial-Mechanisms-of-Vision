@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # parameters
-#source ~/venvs/py27/bin/activate
+module load python-2.7.11
+source ~/ve/py27/bin/activate
 
 FEATURESET=$1
 DISTANCE=$2
@@ -15,25 +16,17 @@ if [ -z "$DISTANCE" ]; then
 fi
 
 # pixels
-# EENet
-#srun -N 1 --partition=long --cpus-per-task=1 --mem=2000 --exclude idu[38-41] python RDM.py -t pixels -d $DISTANCE -f $FEATURESET &
-# Rocket
 srun --partition=long,phi,main -c 1 --mem=2000 -t 96:00:00 python RDM.py -t pixels -d $DISTANCE -f $FEATURESET &
 
 # dnn
-# EENet
-#srun -N 1 --partition=long --cpus-per-task=1 --mem=6000 --exclude idu[38-41] python RDM.py -t dnn -d $DISTANCE -f $FEATURESET -a numpy.reference &
-# Rocket 
-srun --partition=long,phi,main -c 1 --mem=2000 -t 96:00:00 python RDM.py -t dnn -d $DISTANCE -f $FEATURESET -a numpy.reference &
+srun --partition=long,phi,main -c 1 --mem=2000 -t 96:00:00 python RDM.py -t dnn -d $DISTANCE -f $FEATURESET -n alexnet &
+srun --partition=long,phi,main -c 1 --mem=2000 -t 96:00:00 python RDM.py -t dnn -d $DISTANCE -f $FEATURESET -n alexnetrandom &
 
 # brain
 nfiles=$(ls -l ../../Data/Intracranial/Processed/$FEATURESET/*.mat | wc -l)
 for i in $(seq 1 $nfiles)
 do
     let i=i-1
-    # EENet
-    # srun -N 1 --partition=long --cpus-per-task=1 --mem=2000 --exclude idu[38-41] python RDM.py -t brain -d $DISTANCE -i $i -f $FEATURESET &
-    # Rocket
     srun --partition=long,phi,main -c 1 --mem=2000 -t 96:00:00 python RDM.py -t brain -d $DISTANCE -i $i -f $FEATURESET &
     sleep 1
 done

@@ -124,15 +124,17 @@ class RDMDNN(RDM):
     representation = None
     dsm = {}
     layers = None
+    network = None
 
-    def __init__(self, distance, np_activation_data, featureset, shuffle, load_representation=True):
+    def __init__(self, distance, network, featureset, shuffle, load_representation=True):
         RDM.__init__(self, distance, featureset, shuffle)
+        self.network = network
 
-        self.layers = sorted(os.listdir('%s/DNN/activations/%s' % (self.CODEDIR, np_activation_data)))
+        self.layers = sorted(os.listdir('%s/DNN/activations/%s' % (self.CODEDIR, network)))
         self.representation = {}
         if load_representation:
             for layer in self.layers:
-                self.representation[layer] = np.load('%s/DNN/activations/%s/%s/activations.npy' % (self.CODEDIR, np_activation_data, layer))
+                self.representation[layer] = np.load('%s/DNN/activations/%s/%s/activations.npy' % (self.CODEDIR, network, layer))
                 self.representation[layer] = self.representation[layer][self.reorder_dnn_to_categories]
 
                 if self.shuffle:
@@ -146,11 +148,11 @@ class RDMDNN(RDM):
 
     def save_dsm(self):
         for layer in self.layers:
-            np.savetxt('%s/numbers/dnn-%s.txt' % (self.OUTDIR, layer), self.dsm[layer], fmt='%.6f')
+            np.savetxt('%s/numbers/dnn-%s-%s.txt' % (self.OUTDIR, layer, self.network), self.dsm[layer], fmt='%.6f')
 
     def load_dsm(self):
         for layer in self.layers:
-            self.dsm[layer] = np.loadtxt('%s/numbers/dnn-%s.txt' % (self.OUTDIR, layer))
+            self.dsm[layer] = np.loadtxt('%s/numbers/dnn-%s-%s.txt' % (self.OUTDIR, layer, self.network))
 
     def plot_dsm(self):
         for layer in self.layers:
@@ -231,14 +233,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute RDM matrices')
     parser.add_argument('-t', '--type', dest='datatype', type=str, required=True, help='The data source: pixels, dnn or brain')
     parser.add_argument('-d', '--distance', dest='distance', type=str, required=True, help='The distance metric to use')
-    parser.add_argument('-a', '--activations', dest='np_activation_data', type=str, required=False, help='DNN activations for DNN RDMs')
+    parser.add_argument('-n', '--network', dest='network', type=str, required=False, help='DNN activations for DNN RDMs')
     parser.add_argument('-i', '--sid', dest='sid', type=int, required=False, help='Subject ID for Brain RDM')
     parser.add_argument('-f', '--featureset', dest='featureset', type=str, required=True, help='Directory with brain features (Processed/?)')
     parser.add_argument('-s', '--shuffle', dest='shuffle', type=str, required=False, default=False, help='Whether to shuffle data for a permutation test')
     args = parser.parse_args()
     datatype = str(args.datatype)
     distance = str(args.distance)
-    np_activation_data = str(args.np_activation_data)
+    network = str(args.network)
     sid = int(args.sid) if args.sid is not None else None
     featureset = str(args.featureset)
     shuffle = bool(args.shuffle == 'True')
@@ -249,9 +251,9 @@ if __name__ == '__main__':
         rdm.save_dsm()
 
     elif datatype == 'dnn':
-        if np_activation_data == 'None':
+        if network == 'None':
             raise Exception("Activation (-a) is a required argument for DNN RDM")
-        rdm = RDMDNN(distance, np_activation_data, featureset, shuffle)
+        rdm = RDMDNN(distance, network, featureset, shuffle)
         rdm.compute_dsm()
         rdm.save_dsm()
 
