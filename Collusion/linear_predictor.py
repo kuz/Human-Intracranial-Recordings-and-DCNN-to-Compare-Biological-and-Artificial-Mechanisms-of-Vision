@@ -109,7 +109,7 @@ def predict_from_layer(subject_name, layer, pid, layer_activity_all, probe_respo
 
 # prepare lists of probe coordinates for each layer
 print 'Loading list of layers...'
-layers = os.listdir('../../Repository/DNN/activations/%s' % np_activation_data)
+layers = sorted(os.listdir('../../Repository/DNN/activations/%s' % np_activation_data))
 layers = ['pixels'] + layers
 
 assignments = {}
@@ -122,7 +122,7 @@ activations = {}
 for layer in layers:
     if layer == 'pixels':
         activations[layer] = np.zeros((419, 51529))
-        for i, fname in enumerate(os.listdir('../../Data/DNN/imagesdone/')):
+        for i, fname in enumerate(sorted(os.listdir('../../Data/DNN/imagesdone/'))):
             activations[layer][i] = np.ravel(imread('../../Data/DNN/imagesdone/%s' % fname))
     else:
         activations[layer] = np.load('../../Repository/DNN/activations/%s/%s/activations.npy' % (np_activation_data, layer))
@@ -133,7 +133,7 @@ dnn_stimuli = np.loadtxt('../../Data/DNN/imagesdone.txt', dtype={'names': ('stim
 dnn_stimuli = [x[0].split('.')[0] for x in dnn_stimuli]
 
 # read list of subjects
-listing = os.listdir('../../Data/Intracranial/Processed/%s/' % featureset)
+listing = sorted(os.listdir('../../Data/Intracranial/Processed/%s/' % featureset))
 
 # load brain data
 sfile = listing[sid]
