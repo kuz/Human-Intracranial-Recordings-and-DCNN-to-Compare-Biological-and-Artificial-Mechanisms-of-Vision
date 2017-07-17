@@ -1,6 +1,12 @@
 import numpy as np
+import matplotlib
+#matplotlib.use('Agg')
 from matplotlib import pylab as plt
 import matplotlib.cm as cm
+
+# parameters
+network = 'alexnet'
+STATDIR = '../../../Outcome/Statistics/'
 
 # prepare grid
 nareas = 1
@@ -18,19 +24,31 @@ y = np.ravel([[t] * nareas * nfreqs for t in np.arange(ntimes, 0, -1)])
 d = np.ones(ntimes * nareas * nfreqs)
 size = d * 400
 
-# set data
-signigicance = np.array([0.6967, 0.1729, 0.1883, 0.0011, 0.0142, 0.8721, 0.4686, 0.5393, 0.0000, 0.0000,  0.2549, 0.4009, 1.0000, 0.0000, 0.0083])
-#signigicance = np.array([0.2701, 0.1503, 0.2119, 0.0016, 0.0284, 0.3711, 0.2806, 0.1961, 0.0004, 0.0000, 0.2808, 0.2893, 1.0000, 0.0007, 0.0187])
-size = 1.0 / signigicance
-size[np.isinf(size)] = np.ma.masked_invalid(size).max()
-size = np.log(size)
-size005 = np.array(np.log(1.0 / 0.05))
-size005 /= (max(size) - min(size))
-size = (size - min(size)) / (max(size) - min(size))
+# read data
+diagonality = []
+significance = []
+for win in [50, 150, 250]:
+    for band in ['theta', 'alpha', 'beta', 'lowgamma', 'highgamma']:
+        stats = np.load('%s/rsa_mean%s_LFP_5c_artif_bipolar_BA_w%d_%s_resppositive.euclidean.%s.matrixpermfiltered.npy' % (STATDIR, band, win, band, network)).item()
+        diagonality.append(stats['alignment']['rho'])
+        significance.append(stats['alignment']['pval'])
 
-diagonality = np.array([0.0337, 0.1529, -0.3068, 0.5017, 0.1805, -0.0145, -0.1375, 0.3178, 0.4420, 0.3189, -0.1641, -0.2673, 0.0000, 0.4422, 0.1996])
+# set data
+#significance = np.array([0.6967, 0.1729, 0.1883, 0.0011, 0.0142, 0.8721, 0.4686, 0.5393, 0.0000, 0.0000,  0.2549, 0.4009, 1.0000, 0.0000, 0.0083])
+#significance = np.array([0.2701, 0.1503, 0.2119, 0.0016, 0.0284, 0.3711, 0.2806, 0.1961, 0.0004, 0.0000, 0.2808, 0.2893, 1.0000, 0.0007, 0.0187])
+#diagonality = np.array([0.0337, 0.1529, -0.3068, 0.5017, 0.1805, -0.0145, -0.1375, 0.3178, 0.4420, 0.3189, -0.1641, -0.2673, 0.0000, 0.4422, 0.1996])
 #diagonality = np.array([0.0897, 0.1801, -0.2727, 0.5189, 0.1987, 0.0375, -0.1710, 0.4852, 0.4374, 0.3498, -0.1308, -0.2524, 0.0000, 0.4359, 0.2347])
 
+# transform data
+diagonality = np.array(diagonality)
+significance = np.array(significance)
+
+size = 1.0 / significance
+size[np.isinf(size)] = np.ma.masked_invalid(size).max()
+size = np.log(size)
+size = (size - min(size)) / (max(size) - min(size))
+size005 = np.array(np.log(1.0 / 0.05))
+size005 /= (max(size) - min(size))
 
 # plot
 plt.figure(figsize=(13.0, 6.25), dpi=600);
