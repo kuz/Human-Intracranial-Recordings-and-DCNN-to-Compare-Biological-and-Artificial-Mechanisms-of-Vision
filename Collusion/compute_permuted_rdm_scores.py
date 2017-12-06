@@ -26,8 +26,8 @@ for sid in range(len(subjects)):
     s = sio.loadmat('%s/Intracranial/Processed/%s/%s' % (DATADIR, featureset, subjects[sid]))
     for pid in range(len(np.ravel(s['s']['probes'][0][0][0][0][3]))):
         print "echo 'Processing subject %d probe %d'" % (sid, pid)
-        print 'srun --partition=long,phi,main -c 2 --mem=8000 -t 96:00:00 python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s -n %s &' % (sid, pid, featureset, distance, onwhat, threshold, network)
-        print 'sleep 3'
+        print 'srun --partition=long,phi,main -c 2 --mem=8000 -t 24:00:00 python RDMPermuter.py -i %d -p %d -b rsa -f %s -d %s -o %s -t %s -n %s &' % (sid, pid, featureset, distance, onwhat, threshold, network)
+        print 'sleep 2'
 
 print 'echo "All sent"'
 

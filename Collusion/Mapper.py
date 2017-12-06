@@ -212,11 +212,14 @@ class Mapper:
         title = 'Alignment: %.4f (p-value: %.5f)' % (diagonality[0], diagonality[1]) 
 
         # volume
-        volume = np.sum(score_per_arealayer, 1) / n_tot_per_area
-        volume[np.isnan(volume)] = 0.0
-        visual_volume = np.sum(score_per_arealayer[visual_areas], 1) / n_tot_per_area[visual_areas]
-        visual_volume[np.isnan(visual_volume)] = 0.0
-        stats['volume'] = {'allareas': volume, 'visual': visual_volume}
+        volume = np.sum(score_per_arealayer, 1)
+        volume_normalized = volume / n_tot_per_area
+        volume_normalized[np.isnan(volume_normalized)] = 0.0
+        visual_volume = np.sum(score_per_arealayer[visual_areas], 1)
+        visual_volume_normalized = visual_volume / n_tot_per_area[visual_areas]
+        visual_volume_normalized[np.isnan(visual_volume_normalized)] = 0.0
+        stats['volume'] = {'allareas': {'normalized': volume_normalized, 'absolute': volume},
+                           'visual': {'normalized': visual_volume_normalized, 'absolute': visual_volume}}
 
         # specifity to visual areas
         specificity_to_visual = np.sum(visual_volume) / np.sum(volume)
@@ -352,18 +355,28 @@ class Mapper:
 
             # different filenames for different scoring backbone methods
             if self.backbone == 'rsa':
-                filename = '%s_%s.%s%s.%s.%s%s%s.png' % (self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
+                filename = '%s_%s.%s%s.%s.%s%s%s' % (self.backbone, self.featureset, self.distance, self.suffix, self.network, self.scope, ('%.10f' % self.threshold)[2:].rstrip('0'), permfiltered)
             elif self.backbone == 'lp':
-                filename = '%s_%s%s.png' % (self.backbone, self.featureset, permfiltered)
+                filename = '%s_%s%s' % (self.backbone, self.featureset, permfiltered)
             else:
                 raise Exception('Unknown backbone %s' % self.backbone)
+
+            try:
+                os.mkdir('%s/Mapper/Subject' % (self.OUTDIR))
+            except:
+                pass
+
+            try:
+                os.mkdir('%s/Mapper/Subject/%s' % (self.OUTDIR, self.featureset))
+            except:
+                pass
 
             # generate and store plot
             if only_visual:
                 filename = 'visual_' + sname + '_' + filename
-                Plotter.xlayer_yarea_zscore_visual('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
+                Plotter.xlayer_yarea_zscore_visual('%s/Mapper/Subject/%s/%s.png' % (self.OUTDIR, self.featureset, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
             else:
-                Plotter.xlayer_yarea_zscore('%s/Mapper/%s' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
+                Plotter.xlayer_yarea_zscore('%s/Mapper/Subject/%s/%s.png' % (self.OUTDIR, self.featureset, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
 
     def compute_and_plot_single_mni_score(self, filter_by_permutation=False):
 
@@ -435,8 +448,8 @@ if __name__ == '__main__':
         mapper.compute_and_plot_area_mapping(permfilter, only_visual=False)
         #mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=False)
     elif graph == 'layer_area_score_visual':
-        mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
-        #mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=True)
+        #mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
+        mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=True)
     elif graph == 'mni_score':
         mapper.compute_and_plot_single_mni_score(permfilter)
     elif graph == 'mni_layer':
