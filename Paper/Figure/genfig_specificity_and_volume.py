@@ -1,6 +1,12 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pylab as plt
 import matplotlib.cm as cm
+
+# parameters
+network = 'alexnet'
+STATDIR = '../../../Outcome/Statistics/'
 
 # prepare grid
 nareas = 1
@@ -16,16 +22,25 @@ for a in range(nareas):
 x = np.tile(x, ntimes)
 y = np.ravel([[t] * nareas * nfreqs for t in np.arange(ntimes, 0, -1)])
 d = np.ones(ntimes * nareas * nfreqs)
-size = d * 400
 
-# set data
-volume = np.array([20.3323, 11.5194, 2.9658, 5.1633, 26.0197, 17.8143, 3.7027, 0.7739, 10.7975, 34.1563, 7.6122, 1.4636, 0.1520, 11.1669, 22.2823])
-size = volume / 30.0
-size[size > 1.0] = 1.0
-intensity = np.array([0.6772, 0.7119, 0.4161, 0.7922, 0.9695, 0.5642, 0.4978, 0.3926, 0.8167, 0.8798, 0.5197, 0.5544, 0.1379, 0.7232, 0.7907])
+# read data
+specificity = []
+volume = []
+for win in [50, 150, 250]:
+    for band in ['theta', 'alpha', 'beta', 'lowgamma', 'highgamma']:
+        stats = np.load('%s/rsa_mean%s_LFP_5c_artif_bipolar_BA_w%d_%s_resppositive.euclidean.%s.matrixpermfiltered.npy' % (STATDIR, band, win, band, network)).item()
+        specificity.append(stats['visual_specifity'])
+        volume.append(np.sum(stats['volume']['visual']['absolute']))
+        print '%s\t%d\t%.4f\t%.4f' % (band[:5], win, stats['visual_specifity'], np.sum(stats['volume']['visual']['absolute']))
+
+# transform data
+size = np.array(volume) / np.max(volume)
+specificity = np.array(specificity)
 
 # plot
-plt.figure(figsize=(13.0, 6.25), dpi=600);
-plt.scatter(x, y, s=size * 10000, c=intensity, cmap=cm.Reds);
+plt.figure(figsize=(13.0, 7.35), dpi=300);
+plt.scatter(x, y, s=size * 17000, c=specificity, cmap=cm.Reds);
+plt.xlim(0.4, 5.5);
+plt.ylim(0.5, 3.5);
 plt.axis('off');
 plt.savefig('dots_specificity_and_volume.png', bbox_inches='tight');

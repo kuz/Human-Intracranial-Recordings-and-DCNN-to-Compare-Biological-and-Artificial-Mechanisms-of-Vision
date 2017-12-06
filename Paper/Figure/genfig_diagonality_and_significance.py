@@ -3,11 +3,11 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pylab as plt
 import matplotlib.cm as cm
-import pdb
 
 # parameters
-network = 'alexnetrandom'
+network = 'alexnet'
 STATDIR = '../../../Outcome/Statistics/'
+pthreshold = 0.005 / 15.0
 
 # prepare grid
 nareas = 1
@@ -23,7 +23,6 @@ for a in range(nareas):
 x = np.tile(x, ntimes)
 y = np.ravel([[t] * nareas * nfreqs for t in np.arange(ntimes, 0, -1)])
 d = np.ones(ntimes * nareas * nfreqs)
-size = d * 400
 
 # read data
 diagonality = []
@@ -33,7 +32,7 @@ for win in [50, 150, 250]:
         stats = np.load('%s/rsa_mean%s_LFP_5c_artif_bipolar_BA_w%d_%s_resppositive.euclidean.%s.matrixpermfiltered.npy' % (STATDIR, band, win, band, network)).item()
         diagonality.append(stats['alignment']['rho'])
         significance.append(stats['alignment']['pval'])
-        print '%s\t%d\t%.4f\t%.10f' % (band, win, stats['alignment']['rho'], stats['alignment']['pval'])
+        print '%s\t%d\t%.4f\t%.10f' % (band[:5], win, stats['alignment']['rho'], stats['alignment']['pval'])
 
 # transform data
 diagonality = np.array(diagonality)
@@ -46,15 +45,17 @@ size[np.isinf(size)] = np.ma.masked_invalid(size).max()
 size = np.log(size)
 normalizer = (max(size) - min(size))
 size = (size - min(size)) / normalizer
-size005 = np.array(np.log(1.0 / 0.0001))
+size005 = np.array(np.log(1.0 / pthreshold))
 size005 /= normalizer
 
 # plot
-plt.figure(figsize=(13.0, 6.25), dpi=600);
-plt.scatter(x, y, s=size * 10000, c=diagonality, cmap=cm.bwr, vmin=-0.6, vmax=0.6);
+plt.figure(figsize=(13.0, 7.35), dpi=300);
+plt.scatter(x, y, s=size * 17000, c=diagonality, cmap=cm.bwr, vmin=-0.6, vmax=0.6);
 
-# 0.05 circle
-plt.scatter(x, y, s=np.tile(size005, 15) * 10000, facecolors='none', edgecolors='black', alpha=0.9, linestyle='dotted');
+# p-value threshold circle
+plt.scatter(x, y, s=np.tile(size005, 15) * 17000, facecolors='none', edgecolors='black', alpha=0.9, linestyle='dashed', linewidth=2);
+plt.xlim(0.4, 5.5);
+plt.ylim(0.5, 3.5);
 
 plt.axis('off');
 plt.savefig('dots_diagonality_and_significance.png', bbox_inches='tight');

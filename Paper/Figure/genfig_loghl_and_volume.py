@@ -1,6 +1,13 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pylab as plt
 import matplotlib.cm as cm
+import pdb
+
+# parameters
+network = 'alexnet'
+STATDIR = '../../../Outcome/Statistics/'
 
 # prepare grid
 nareas = 5
@@ -16,16 +23,24 @@ for a in range(nareas):
 x = np.tile(x, ntimes)
 y = np.ravel([[t] * nareas * nfreqs for t in np.arange(ntimes, 0, -1)])
 d = np.ones(ntimes * nareas * nfreqs)
-size = d * 400
 
-# set data
-volume = np.array([0.0000, 0.0000, 0.0000, 0.8928, 1.4475, 0.9256, 0.1410, 0.0000, 0.8326, 5.8732, 5.6444, 2.1244, 0.5637, 1.3359, 7.1778, 13.7623, 9.2540, 2.4021, 2.1020, 11.5212, 5.7216, 2.7679, 2.3907, 0.3771, 0.0000, 0.0000, 0.0000, 0.1592, 1.0134, 0.9878, 1.0633, 0.2343, 0.0000, 2.3671, 7.8881, 4.7884, 0.4858, 0.3836, 3.4907, 10.1596, 11.9626, 2.9826, 0.2311, 3.9263, 15.1208, 4.6860, 1.6082, 0.7892, 0.5241, 0.7241, 0.1299, 0.1105, 0.1520, 0.8083, 0.6914, 2.4239, 0.4848, 0.0000, 1.5273, 4.3102, 2.2254, 0.5073, 0.0000, 4.5790, 7.2807, 2.8330, 0.3610, 0.0000, 4.2523, 10.0000, 0.6803, 0.0000, 0.0000, 0.3902, 0.5105])
-size = volume / 10.0
-size[size > 1.0] = 1.0
-highlow = np.array([0.0000, 0.0000, 0.0000, -1.2091, 0.0166, 1.4144, 0.0000, 0.0000, -0.8027, -0.8382, 0.4999, -0.3386, 1.0000, -0.7805, 0.2885, 0.9900, 0.7724, 1.5380, 1.0392, 0.2870, 1.6812, 1.0000, 1.0000, 1.0000, 0.0000, 0.0000, 0.0000, -1.0000, -0.5014, 0.1491, 1.5757, 1.0000, 0.0000, -0.5403, -0.6489, 0.6768, 1.0000, 1.0000, -0.2053, -0.0327, 0.8761, 1.0004, 1.0000, 1.0138, 1.0463, 1.8326, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, -1.0000, -1.3472, -0.4849, -0.0478, 0.8953, 0.0000, -1.3269, -0.4344, -0.3530, 1.0000, 0.0000, -0.7545, -0.4334, -0.5582, 1.0000, 0.0000, 0.9247, 0.9905, -1.0251, 0.0000, 0.0000, 1.0000, 1.0000])
+# read data
+highlow = []
+volume = []
+for win in [50, 150, 250]:
+    for area in [17, 18, 19, 37, 20]:
+        for band in ['theta', 'alpha', 'beta', 'lowgamma', 'highgamma']:
+            stats = np.load('%s/rsa_mean%s_LFP_5c_artif_bipolar_BA_w%d_%s_resppositive.euclidean.%s.matrixpermfiltered.npy' % (STATDIR, band, win, band, network)).item()
+            highlow.append(stats['per_area']['hhl_ratio'][area])
+            volume.append(stats['per_area']['volume'][area])
+
+# transform data
+size = np.array(volume) / np.max(volume)
+highlow = np.array(highlow)
 
 # plot
-plt.figure(figsize=(95.0, 6.25), dpi=600);
-plt.scatter(x, y, s=size * 10000, c=highlow, cmap=cm.bwr);
+plt.figure(figsize=(10.0, 0.9), dpi=300);
+plt.scatter(x, y, s=size * 200, c=highlow, cmap=cm.bwr);
+plt.ylim(0.5, 3.5);
 plt.axis('off');
 plt.savefig('dots_loghl_and_volume.png', bbox_inches='tight');
