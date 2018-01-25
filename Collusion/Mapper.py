@@ -3,10 +3,11 @@ import argparse
 import cPickle
 import numpy as np
 import scipy.io as sio
+import random
 from Plotter import Plotter
 from scipy.stats import spearmanr
 from scipy.stats import mannwhitneyu
-import pdb
+from IPython import embed
 
 class Mapper:
 
@@ -287,6 +288,118 @@ class Mapper:
         #    Plotter.xlayer_yarea_zscore('%s/Mapper/%s.png' % (self.OUTDIR, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, title)
 
 
+    def compute_area_mapping_noise_estimate(self, filter_by_permutation=False, nruns=1000):
+        '''
+        Estimates the noise of the alignment measurement by splitting each subject's probeset in 2 halves, computing
+        alignment score for each half separately, repeating this operation N times and reporting average alignment score
+        and standard error
+        '''
+
+        # load the correlation scores
+        scores = self._collect_scores()
+
+        # compute pvalues if filtering my permutataion test is requested
+        if filter_by_permutation:
+            pvals = self._compute_pvals()
+        
+        # collect statistics over several runs
+        one_half_alignments = []
+        two_half_alignments = []
+        one_half_pvals = []
+        two_half_pvals = []
+        for r in range(nruns):
+
+            # aggregate scores over all subjects
+            one_half_counter = np.array([0, 0, 0, 0, 0])
+            two_half_counter = np.array([0, 0, 0, 0, 0])
+            one_half_n_per_arealayer = np.zeros((self.nareas, self.nlayers))
+            two_half_n_per_arealayer = np.zeros((self.nareas, self.nlayers))
+
+            for sname in random.sample(scores.keys(), len(scores.keys())):
+
+                # which half is to be balanced out by adding this subject's probes
+                probes_in_visual_areas = []
+                for va in [17, 18, 19, 37, 20]:
+                    probes_in_visual_areas.append(np.sum(scores[sname]['areas'] == va))
+                add_to_one_dist = np.sum(np.abs(one_half_counter - two_half_counter + probes_in_visual_areas))
+                add_to_two_dist = np.sum(np.abs(two_half_counter - one_half_counter + probes_in_visual_areas))
+                add_to_one = False
+                if add_to_one_dist < add_to_two_dist:
+                    add_to_one = True
+
+                # skip subjects with no probes
+                if scores[sname]['scores'] is None:
+                    continue
+
+                # filter scores by permutation test results
+                if filter_by_permutation:
+                    scores[sname]['scores'] = scores[sname]['scores'] * (pvals[sname] <= 0.001)
+
+                for aid in range(self.nareas):
+                    
+                    # skip an area if there were no probes in it
+                    if len(scores[sname]['scores'][scores[sname]['areas'] == aid]) == 0:
+                        continue
+
+                    for lid in range(self.nlayers):
+                        if add_to_one:
+                            one_half_n_per_arealayer[aid, lid] += np.sum(scores[sname]['scores'][scores[sname]['areas'] == aid, lid] > 0.0)
+                        else:
+                            two_half_n_per_arealayer[aid, lid] += np.sum(scores[sname]['scores'][scores[sname]['areas'] == aid, lid] > 0.0)
+
+                if add_to_one:
+                    one_half_counter += probes_in_visual_areas
+                else:
+                    two_half_counter += probes_in_visual_areas
+
+            # compute alignment
+            visual_areas = [17, 18, 19, 37, 20]
+            n_per_visual = one_half_n_per_arealayer[visual_areas, :]
+            areas = []
+            layers = []
+            for a in range(len(visual_areas)):
+                for l in range(self.nlayers):
+                    for c in range(int(n_per_visual[a, l])):
+                        areas.append(a)
+                        layers.append(l)
+            diagonality = spearmanr(areas, layers)
+            one_half_alignments.append(diagonality[0])
+            one_half_pvals.append(diagonality[1])
+
+            n_per_visual = two_half_n_per_arealayer[visual_areas, :]
+            areas = []
+            layers = []
+            for a in range(len(visual_areas)):
+                for l in range(self.nlayers):
+                    for c in range(int(n_per_visual[a, l])):
+                        areas.append(a)
+                        layers.append(l)
+            diagonality = spearmanr(areas, layers)
+            two_half_alignments.append(diagonality[0])
+            two_half_pvals.append(diagonality[1])
+
+        print ''
+        print self.featureset
+        print '------------------------------------------------'
+        one_half_alignments = np.nan_to_num(one_half_alignments)
+        two_half_alignments = np.nan_to_num(two_half_alignments)
+        one_half_pvals = np.nan_to_num(one_half_pvals)
+        two_half_pvals = np.nan_to_num(two_half_pvals)
+        print 'Alignment: median %.4f, mean %.4f, std %.4f' % (np.median(one_half_alignments), np.mean(one_half_alignments), np.std(one_half_alignments))
+        print 'p-value:   median %.4f, mean %.4f, std %.4f' % (np.median(one_half_pvals), np.mean(one_half_pvals), np.std(one_half_pvals))
+        alignment_diffs = np.abs(np.array(one_half_alignments) - np.array(two_half_alignments))
+        pval_diffs = np.abs(np.array(one_half_pvals) - np.array(two_half_pvals))
+        print 'Alignment diff: median %.4f, mean %.4f, std %.4f' % (np.median(alignment_diffs), np.mean(alignment_diffs), np.std(alignment_diffs))
+        print 'p-value   diff: median %.4f, mean %.4f, std %.4f' % (np.median(pval_diffs), np.mean(pval_diffs), np.std(pval_diffs))
+        print ''
+        
+        np.savetxt('%s/Noisy estimates/%s_alignments_with_%s.txt' % (self.OUTDIR, self.featureset, self.network), one_half_alignments, fmt='%.12f')
+        #np.savetxt('two_half_alignments.txt', two_half_alignments, fmt='%.12f')
+        #np.savetxt('one_half_pvals.txt', one_half_pvals, fmt='%.12f')
+        #np.savetxt('alignment_diffs.txt', alignment_diffs, fmt='%.12f')
+        #np.savetxt('pval_diffs.txt', pval_diffs, fmt='%.12f')
+
+
     def compute_and_plot_area_mapping_per_subject(self, filter_by_permutation=False, only_visual=False):
 
         # load the correlation scores
@@ -378,6 +491,8 @@ class Mapper:
             else:
                 Plotter.xlayer_yarea_zscore('%s/Mapper/Subject/%s/%s.png' % (self.OUTDIR, self.featureset, filename), self.nareas, self.nlayers, n_sig_per_area, n_tot_per_area, score_per_arealayer_normalized, '')
 
+    
+
     def compute_and_plot_single_mni_score(self, filter_by_permutation=False):
 
         # load the correlation scores
@@ -444,19 +559,25 @@ if __name__ == '__main__':
 
     # initialize and run the mapper
     mapper = Mapper(backbone, featureset, distance, suffix, onwhat, threshold, statistic, network)
+    
     if graph == 'layer_area_score':
         mapper.compute_and_plot_area_mapping(permfilter, only_visual=False)
         #mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=False)
+    
     elif graph == 'layer_area_score_visual':
-        #mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
         mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=True)
+        #mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
+    
+    elif graph == 'area_mapping_noise_estimate':    
+        mapper.compute_area_mapping_noise_estimate(permfilter)
+    
     elif graph == 'mni_score':
         mapper.compute_and_plot_single_mni_score(permfilter)
+    
     elif graph == 'mni_layer':
         mapper.compute_and_plot_single_mni_layer(permfilter)
+    
     else:
         raise Exception('Unknown graph %s' % graph)
-
-
 
     print 'All done.'
