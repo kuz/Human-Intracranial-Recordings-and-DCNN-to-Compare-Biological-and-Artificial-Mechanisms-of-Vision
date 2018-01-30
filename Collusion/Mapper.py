@@ -5,9 +5,10 @@ import numpy as np
 import scipy.io as sio
 import random
 from Plotter import Plotter
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, kendalltau
 from scipy.stats import mannwhitneyu
 from IPython import embed
+import pdb
 
 class Mapper:
 
@@ -198,6 +199,8 @@ class Mapper:
         # Global stats
         #
 
+        #pdb.set_trace()
+
         # diagonality
         n_per_visual = n_per_arealayer[visual_areas, :]
         score_per_visual_normalized = score_per_arealayer_normalized[visual_areas, :]
@@ -208,9 +211,12 @@ class Mapper:
                 for c in range(int(n_per_visual[a, l])):
                     areas.append(a)
                     layers.append(l)
-        diagonality = spearmanr(areas, layers)
+        #diagonality = spearmanr(areas, layers)
+        diagonality = kendalltau(areas, layers)
         stats['alignment'] = {'rho': diagonality[0], 'pval': diagonality[1]}
-        title = 'Alignment: %.4f (p-value: %.5f)' % (diagonality[0], diagonality[1]) 
+        title = 'Alignment: %.4f (p-value: %.10f)' % (diagonality[0], diagonality[1]) 
+        print title
+        exit()
 
         # volume
         volume = np.sum(score_per_arealayer, 1)
@@ -565,8 +571,8 @@ if __name__ == '__main__':
         #mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=False)
     
     elif graph == 'layer_area_score_visual':
-        mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=True)
-        #mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
+        #mapper.compute_and_plot_area_mapping_per_subject(permfilter, only_visual=True)
+        mapper.compute_and_plot_area_mapping(permfilter, only_visual=True)
     
     elif graph == 'area_mapping_noise_estimate':    
         mapper.compute_area_mapping_noise_estimate(permfilter)
