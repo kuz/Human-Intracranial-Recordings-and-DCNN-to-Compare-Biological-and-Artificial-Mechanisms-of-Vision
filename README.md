@@ -55,10 +55,7 @@ The particular DCNN that was used in our research was AlexNet trained on ImageNe
 Responses of that network to our set of images: [alexnet-activations.zip | 395 Mb](http://neuro.cs.ut.ee/downloads/intracranial-dcnn/alexnet-activations.zip) has an `.npy` for each layer of the DCNN.
 
 #### Final RSA Scores and Results
-Once we had human and machine responses and we computed representation geometry of both and compared those geometries using RSA analysis.
+Once we had human and machine responses we computed representation geometry of both and compared those geometries using representational similarity analysis.
 
 ###### Correlation scores for comparing RDMs
 Final RSA scores and p-values [rsa_scores_and_pvalues.zip | 2.9 Mb](http://neuro.cs.ut.ee/downloads/intracranial-dcnn/rsa_scores_and_pvalues.zip) show correlation between each pair of (probe, layer) RDMs and their significance level based on the permutation test. Both for pre-trained and random (control) networks.
-
-###### Full-size figures
-
